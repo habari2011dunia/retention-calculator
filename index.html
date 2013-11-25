@@ -1,0 +1,194 @@
+﻿<DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>放射性物質の体内残留量グラフ</title>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<style>
+.axis path {
+	fill: none;
+	stroke: black;
+}
+
+.axis line {
+	stroke: black;
+}
+
+.line {
+	fill: none;
+	stroke: steelblue;
+	stroke-width: 2;
+}
+
+input[type=text] {
+	width: 50;
+}
+
+#graph {
+	float: left;
+	width: 640px;
+	height: 500px;
+}
+
+#control {
+	float: left;
+	width: 320px;
+	height: 500px;
+}
+</style>
+</head>
+<body>
+<div id="graph">
+<svg></svg>
+</div>
+<div id="control">
+<p>放射性物質を摂取したときの体内残留量を単純な半減期モデルに基づいて計算し, グラフ表示します。</p>
+<p>データを半角数字で入力して更新ボタンを押してください。</p>
+<p>
+実効半減期: <input type="text" value="110" id="halftime">日<br>
+初期摂取量: <input type="text" value="0" id="initial">Bq<br>
+慢性摂取量: <input type="text" value="1" id="interval">日ごとに<input type="text" value="1" id="chronic">Bq<br>
+<input type="button" value="更新" id="update">
+</p>
+</div>
+<script>
+(function() {
+var maxTime = 1000, timeStep = 1;
+var data = [];
+
+// データ初期化
+var iMax = maxTime/timeStep;
+for(var i=0; i<iMax; i++) {
+	data.push({time: i*timeStep, value: 0});
+}
+
+// 表示領域のサイズと余白
+var w = 640, h = 500; 
+var margin = {top: 10, left: 50, bottom: 40, right:50};
+
+// svg要素
+var svg = d3.select("svg")
+	.attr({width: w, height: h});
+
+// データ範囲から表示範囲に変換する関数
+var xScale = d3.scale.linear()
+	.domain([0, maxTime])
+	.range([margin.left, w-margin.right])
+	.nice();
+var yScale = d3.scale.linear()
+	.domain([0, d3.max(data, function(d) { return d.value; } )])
+	.range([h-margin.bottom, margin.top])
+	.nice();
+
+// 軸となるg要素を作る関数
+var xAxis = d3.svg.axis()
+	xAxis.scale(xScale)
+	.orient("bottom");
+var yAxis = d3.svg.axis()
+	yAxis.scale(yScale)
+	.orient("left");
+
+// 折れ線となるpath要素のd属性を計算する関数
+var line = d3.svg.line()
+	.x(function(d) { return xScale(d.time); })
+	.y(function(d) { return yScale(d.value); });
+
+// x軸となるg要素をsvg要素の子要素として追加
+svg.append("g")
+	.attr("class", "x axis")
+	.attr("transform", "translate(0,"+(h-margin.bottom)+")")
+	.call(xAxis)
+	.append("text") // ラベル
+	.text("経過時間[日]")
+	.attr("font-size", 10)
+	.attr("dx", (w-margin.right)/2)
+	.attr("dy", "3.8em");
+
+// y軸となるg要素をsvg要素の子要素として追加
+svg.append("g")
+	.attr("class", "y axis")
+	.attr("transform", "translate("+margin.left+",0)")
+	.call(yAxis)
+	.append("text") // ラベル
+	.text("体内残留量[Bq]")
+	.attr("font-size", 10)
+	.attr("transform", "rotate(-90)")
+	.attr("dy", "-3.8em")
+	.attr("dx", -h/2);
+
+// 折れ線となるpath要素をsvg要素の子要素として追加
+svg.append("path")
+	.datum(data) // d属性はupdate()関数内で指定する
+	.attr("class", "line");
+
+update();
+
+// 更新ボタン
+d3.select("#update").on("click", function() {
+	update();
+});
+
+// 更新
+function update() {
+	// 半減期を取得
+	var halftime = document.getElementById("halftime").value;
+	// IRF(Intake Retention Fraction): t=0に単位量摂取のときの解, つまりグリーン関数のこと
+	function irf(t) { return t >= 0 ? Math.pow(0.5, t/halftime) : 0; }
+	// 初期摂取量を取得
+	var initial = document.getElementById("initial").value;
+	// 慢性摂取量を取得
+	var interval = document.getElementById("interval").value;
+	var chronic = document.getElementById("chronic").value;
+
+	// 値のチェック
+	if (halftime <= 0) {
+		alert("実効半減期には正の値を入れてください");
+		return ;
+	} else if (initial < 0) {
+		alert("初期摂取量には非負の値を入れてください");
+		return ;
+	} else if (interval <= 0) {
+		alert("慢性摂取の間隔には正の値を入れてください");
+		return ;
+	} else if (chronic < 0) {
+		alert("慢性摂取量には非負の値を入れてください");
+		return ;
+	}
+
+	// データ再計算
+	data.forEach(function(d) {
+		d.value = initial * irf(d.time); // 初期摂取分
+		for (var i = 0; interval*i < d.time; i++) { // 慢性摂取分
+			d.value += chronic * irf(d.time-interval*i);
+		}
+	});
+
+	// 2段階のアニメーションで変形する
+	// 1段階目: 最初の1秒間
+	// 折れ線を描き直す
+	svg.select(".line")
+		.transition()
+		.duration(1000)
+		.attr("d", line);
+
+	// 2段階目: 1秒待って次の1秒間
+	// y軸のデータ範囲を取り直す
+	yScale.domain([0, d3.max(data, function(d) { return d.value; } )]);
+	// y軸を描き直す
+	svg.select(".y.axis")
+		.transition()
+		.delay(1000)
+		.duration(1000)
+		.call(yAxis);
+	// y軸に合わせて折れ線を描き直す
+	svg.select(".line")
+		.transition()
+		.delay(1000)
+		.duration(1000)
+		.attr("d", line);
+}
+
+})();
+</script>
+</body>
+</html>
