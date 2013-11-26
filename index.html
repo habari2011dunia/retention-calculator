@@ -48,17 +48,18 @@ input[type=text] {
 実効半減期: <input type="text" value="110" id="halftime">日<br>
 初期摂取量: <input type="text" value="0" id="initial">Bq<br>
 慢性摂取量: <input type="text" value="1" id="interval">日ごとに<input type="text" value="1" id="chronic">Bq<br>
+時間軸: <input type="text" value="1000" id="maxTime">日後まで表示<br>
 <input type="button" value="更新" id="update">
 </p>
 </div>
 <script>
 (function() {
-var maxTime = 1000, timeStep = 1;
+var maxTime = 1000, stepsNumber = 1000,
+	timeStep = maxTime/stepsNumber;
 var data = [];
 
 // データ初期化
-var iMax = maxTime/timeStep;
-for(var i=0; i<iMax; i++) {
+for(var i=0; i<stepsNumber; i++) {
 	data.push({time: i*timeStep, value: 0});
 }
 
@@ -139,6 +140,8 @@ function update() {
 	// 慢性摂取量を取得
 	var interval = document.getElementById("interval").value;
 	var chronic = document.getElementById("chronic").value;
+	// 最大時間を取得
+	maxTime = document.getElementById("maxTime").value;
 
 	// 値のチェック
 	if (halftime <= 0) {
@@ -153,13 +156,19 @@ function update() {
 	} else if (chronic < 0) {
 		alert("慢性摂取量には非負の値を入れてください");
 		return ;
+	} else 	if (maxTime <= 0) {
+		alert("最大時間には正の値を入れてください");
+		return ;
 	}
 
+
 	// データ再計算
-	data.forEach(function(d) {
+	timeStep = maxTime/stepsNumber;
+	data.forEach(function(d, i) {
+		d.time = i * timeStep; // 時間
 		d.value = initial * irf(d.time); // 初期摂取分
-		for (var i = 0; interval*i < d.time; i++) { // 慢性摂取分
-			d.value += chronic * irf(d.time-interval*i);
+		for (var j = 0; interval*j < d.time; j++) { // 慢性摂取分
+			d.value += chronic * irf(d.time-interval*j);
 		}
 	});
 
@@ -174,13 +183,19 @@ function update() {
 	// 2段階目: 1秒待って次の1秒間
 	// y軸のデータ範囲を取り直す
 	yScale.domain([0, d3.max(data, function(d) { return d.value; } )]);
-	// y軸を描き直す
+	xScale.domain([0, maxTime]);
+	// 軸を描き直す
+	svg.select(".x.axis")
+		.transition()
+		.delay(1000)
+		.duration(1000)
+		.call(xAxis);
 	svg.select(".y.axis")
 		.transition()
 		.delay(1000)
 		.duration(1000)
 		.call(yAxis);
-	// y軸に合わせて折れ線を描き直す
+	// 軸に合わせて折れ線を描き直す
 	svg.select(".line")
 		.transition()
 		.delay(1000)
