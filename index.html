@@ -50,9 +50,22 @@ input[type=text] {
 
 モデルを選択:
 <select id="selectModel">
+	<option value="ICRP56Model" selected>ICRP publ. 56</option>
 	<option value="MeloModel">Melo et al(1997)</option>
 	<option value="halflifeModel">生物学的半減期を入力</option>
 </select><br>
+
+<div id="ICRP56Model">
+年齢:
+<select id="age">
+	<option>3ヶ月</option>
+	<option>1歳</option>
+	<option>5歳</option>
+	<option>10歳</option>
+	<option>15歳</option>
+	<option selected>成人</option>
+</select><br>
+</div>
 
 <div id="MeloModel">
 年齢・体重:
@@ -91,6 +104,15 @@ input[type=text] {
 (function() {
 
 // モデル選択
+var ICRP56Parameter = [
+	{age: "3months", weight: 6,   a1: 0,    T1: 1,   a2:1,    T2: 16},
+	{age: "1year",   weight: 9.8, a1: 0,    T1: 1,   a2:1,    T2: 13},
+	{age: "5years",  weight: 19,  a1: 0.45, T1: 9.1, a2:0.55, T2: 30},
+	{age: "10years", weight: 32,  a1: 0.3,  T1: 5.8, a2:0.7,  T2: 50},
+	{age: "15years", weight: 55,  a1: 0.13, T1: 2.2, a2:0.87, T2: 93},
+	{age: "Adult",   weight: 70,  a1: 0.1,  T1: 2,   a2:0.9,  T2: 110}
+];
+
 var MeloParameter = [
 	{age:"0-16", weight: "3-6", a1: 0.25, T1: 3, a2: 0.75, T2: 13, a3: 0, T3: 1},
 	{age:"0-16", weight: "7-10", a1: 0.25, T1: 3, a2: 0.75, T2: 19, a3: 0, T3: 1},
@@ -103,7 +125,7 @@ var MeloParameter = [
 	{age:"Adult Female", a1: 0.15, T1: 3, a2: 0.85, T2: 65, a3: 0.001, T3: 500},
 	{age:"Adult Male", a1: 0.15, T1: 3, a2: 0.85, T2: 90, a3: 0.001, T3: 500}
 ];
-var modelNames = ["MeloModel", "halflifeModel"];
+var modelNames = ["ICRP56Model", "MeloModel", "halflifeModel"];
 
 function selectModel() {
 	modelNames.forEach(function(d) {
@@ -209,6 +231,14 @@ function update() {
 	var modelIndex = document.getElementById("selectModel").selectedIndex;
 	var modelName = document.getElementById("selectModel").options[modelIndex].value;
 	var Tp = document.getElementById("physicalHalflife").value * 365.24;
+
+	if (modelName == "ICRP56Model") {
+		var parameter = ICRP56Parameter[document.getElementById("age").selectedIndex];
+		a1 = parameter.a1;
+		a2 = parameter.a2;
+		T1 = parameter.T1;
+		T2 = parameter.T2;
+	}
 
 	if (modelName == "MeloModel") {
 		var parameter = MeloParameter[document.getElementById("ageWeight").selectedIndex];
