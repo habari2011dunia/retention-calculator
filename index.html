@@ -41,24 +41,97 @@ input[type=text] {
 <div id="graph">
 <svg></svg>
 </div>
+
 <div id="control">
-<p>放射性物質を摂取したときの体内残留量を単純な半減期モデルに基づいて計算し, グラフ表示します。</p>
+<p>放射性物質を摂取したときの体内残留量を選択した体内動態モデルに基づいて計算し, グラフ表示します。</p>
 <p>データを半角数字で入力して更新ボタンを押してください。</p>
-<p>
-実効半減期: <input type="text" value="110" id="halftime">日<br>
+<form>
+モデルを選択:
+<select id="selectModel">
+	<option value="IAEA1009Model">IAEA-TECDOC-1009</option>
+	<option value="halflifeModel">生物学的半減期を入力</option>
+</select><br>
+
+<div id="IAEA1009Model">
+年齢・体重:
+<select id="ageWeight">
+	<option>0-16歳, 3-6kg</option>
+	<option>0-16歳, 7-10kg</option>
+	<option>0-16歳, 11-15kg</option>
+	<option>0-16歳, 16-30kg</option>
+	<option>0-16歳, 31-40kg</option>
+	<option>0-16歳, 41-50kg</option>
+	<option>0-16歳, 51-60kg</option>
+	<option>0-16歳, 61-70kg</option>
+	<option>成人女性</option>
+	<option>成人男性</option>
+</select><br>
+</div>
+
+<div id="halflifeModel">
+生物学的半減期: <input type="text" value="110" id="biologicalHalflife">日
+</div>
+
+核種:
+<select id="selectNuclide">
+	<option>セシウム137</option>
+	<option>セシウム134</option>
+</select><br>
+物理学的半減期: <input type="text" value="30.17" id="physicalHalflife">年<br>
+
 初期摂取量: <input type="text" value="0" id="initial">Bq<br>
 慢性摂取量: <input type="text" value="1" id="interval">日ごとに<input type="text" value="1" id="chronic">Bq<br>
 時間軸: <input type="text" value="1000" id="maxTime">日後まで表示<br>
+
 <input type="button" value="更新" id="update">
-</p>
-</div>
+</form>
+
+</div><!-- control -->
 <script>
 (function() {
+
+// モデル選択
+var IAEA1009parameter = [
+	{age:"0-16", weight: "3-6", a1: 0.25, T1: 3, a2: 0.75, T2: 13, a3: 0, T3: 1},
+	{age:"0-16", weight: "7-10", a1: 0.25, T1: 3, a2: 0.75, T2: 19, a3: 0, T3: 1},
+	{age:"0-16", weight: "11-15", a1: 0.25, T1: 3, a2: 0.75, T2: 25, a3: 0, T3: 1},
+	{age:"0-16", weight: "16-30", a1: 0.25, T1: 3, a2: 0.75, T2: 37, a3: 0, T3: 1},
+	{age:"0-16", weight: "31-40", a1: 0.25, T1: 3, a2: 0.75, T2: 49, a3: 0, T3: 1},
+	{age:"0-16", weight: "41-50", a1: 0.25, T1: 3, a2: 0.75, T2: 57, a3: 0.001, T3: 500},
+	{age:"0-16", weight: "51-60", a1: 0.25, T1: 3, a2: 0.75, T2: 65, a3: 0.001, T3: 500},
+	{age:"0-16", weight: "61-70", a1: 0.25, T1: 3, a2: 0.75, T2: 72, a3: 0.001, T3: 500},
+	{age:"Adult Female", a1: 0.15, T1: 3, a2: 0.85, T2: 65, a3: 0.001, T3: 500},
+	{age:"Adult Male", a1: 0.15, T1: 3, a2: 0.85, T2: 90, a3: 0.001, T3: 500}
+];
+var modelNames = ["IAEA1009Model", "halflifeModel"];
+
+function selectModel() {
+	modelNames.forEach(function(d) {
+		document.getElementById(d).style.display = "none";
+	});
+	var i = document.getElementById("selectModel").selectedIndex;
+	document.getElementById(modelNames[i]).style.display = "block";
+}
+
+document.getElementById("selectModel").onchange = selectModel;
+selectModel();
+
+// 核種選択
+var nuclides = [
+	{name: "137cs", halflife: 30.17, jp: "セシウム137"},
+	{name: "137cs", halflife: 2.0652, jp: "セシウム134"}
+];
+document.getElementById("selectNuclide").onchange = function() {
+	var i = document.getElementById("selectNuclide").selectedIndex;
+	document.getElementById("physicalHalflife").value = nuclides[i].halflife;
+};
+
+// 時間
 var maxTime = 1000, stepsNumber = 1000,
 	timeStep = maxTime/stepsNumber;
-var data = [];
 
 // データ初期化
+var data = [];
 for(var i=0; i<stepsNumber; i++) {
 	data.push({time: i*timeStep, value: 0});
 }
@@ -131,10 +204,39 @@ d3.select("#update").on("click", function() {
 
 // 更新
 function update() {
-	// 半減期を取得
-	var halftime = document.getElementById("halftime").value;
-	// IRF(Intake Retention Fraction): t=0に単位量摂取のときの解, つまりグリーン関数のこと
-	function irf(t) { return t >= 0 ? Math.pow(0.5, t/halftime) : 0; }
+	// 動態モデルのパラメータ
+	var a1=0, a2=0, a3=0, T1=1, T2=1, T3=1;
+	var modelIndex = document.getElementById("selectModel").selectedIndex;
+	var modelName = document.getElementById("selectModel").options[modelIndex].value;
+	var Tp = document.getElementById("physicalHalflife").value * 365.24;
+
+	if (modelName == "IAEA1009Model") {
+		var parameter = IAEA1009parameter[document.getElementById("ageWeight").selectedIndex];
+		a1 = parameter.a1;
+		a2 = parameter.a2;
+		a3 = parameter.a3;
+		T1 = parameter.T1;
+		T2 = parameter.T2;
+		T3 = parameter.T3;
+	}
+
+	if (modelName == "halflifeModel") {
+		// 生物学的半減期を取得
+		T1 = document.getElementById("biologicalHalflife").value;
+		if (T1 <= 0) {
+			alert("生物学的半減期には正の値を入れてください");
+			return ;
+		}
+		a1 = 1;
+	}
+
+	console.log("a1=",a1,"T1=",T1,"a2=",a2,"T2=",T2,"a3=",a3,"T3=",T3,"Tp=",Tp);
+
+	// IRF(Intake Retention Fraction): t=0に単位量急性摂取のときの解, つまりグリーン関数のこと
+	function irf(t) {
+		return t >= 0 ? (a1*Math.pow(0.5, t/T1)+a2*Math.pow(0.5, t/T2)+a3*Math.pow(0.5, t/T3))*Math.pow(0.5, t/Tp) : 0;
+	}
+
 	// 初期摂取量を取得
 	var initial = document.getElementById("initial").value;
 	// 慢性摂取量を取得
@@ -143,11 +245,9 @@ function update() {
 	// 最大時間を取得
 	maxTime = document.getElementById("maxTime").value;
 
+
 	// 値のチェック
-	if (halftime <= 0) {
-		alert("実効半減期には正の値を入れてください");
-		return ;
-	} else if (initial < 0) {
+	if (initial < 0) {
 		alert("初期摂取量には非負の値を入れてください");
 		return ;
 	} else if (interval <= 0) {
@@ -160,7 +260,6 @@ function update() {
 		alert("最大時間には正の値を入れてください");
 		return ;
 	}
-
 
 	// データ再計算
 	timeStep = maxTime/stepsNumber;
