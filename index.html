@@ -46,6 +46,8 @@ input[type=text] {
 <p>放射性物質を摂取したときの体内残留量を選択した体内動態モデルに基づいて計算し, グラフ表示します。</p>
 <p>データを半角数字で入力して更新ボタンを押してください。</p>
 <form>
+<input type="button" value="更新" id="update"><br>
+
 モデルを選択:
 <select id="selectModel">
 	<option value="IAEA1009Model">IAEA-TECDOC-1009</option>
@@ -64,7 +66,7 @@ input[type=text] {
 	<option>0-16歳, 51-60kg</option>
 	<option>0-16歳, 61-70kg</option>
 	<option>成人女性</option>
-	<option>成人男性</option>
+	<option selected>成人男性</option>
 </select><br>
 </div>
 
@@ -82,8 +84,6 @@ input[type=text] {
 初期摂取量: <input type="text" value="0" id="initial">Bq<br>
 慢性摂取量: <input type="text" value="1" id="interval">日ごとに<input type="text" value="1" id="chronic">Bq<br>
 時間軸: <input type="text" value="1000" id="maxTime">日後まで表示<br>
-
-<input type="button" value="更新" id="update">
 </form>
 
 </div><!-- control -->
