@@ -50,11 +50,11 @@ input[type=text] {
 
 モデルを選択:
 <select id="selectModel">
-	<option value="IAEA1009Model">IAEA-TECDOC-1009</option>
+	<option value="MeloModel">Melo et al(1997)</option>
 	<option value="halflifeModel">生物学的半減期を入力</option>
 </select><br>
 
-<div id="IAEA1009Model">
+<div id="MeloModel">
 年齢・体重:
 <select id="ageWeight">
 	<option>0-16歳, 3-6kg</option>
@@ -91,7 +91,7 @@ input[type=text] {
 (function() {
 
 // モデル選択
-var IAEA1009parameter = [
+var MeloParameter = [
 	{age:"0-16", weight: "3-6", a1: 0.25, T1: 3, a2: 0.75, T2: 13, a3: 0, T3: 1},
 	{age:"0-16", weight: "7-10", a1: 0.25, T1: 3, a2: 0.75, T2: 19, a3: 0, T3: 1},
 	{age:"0-16", weight: "11-15", a1: 0.25, T1: 3, a2: 0.75, T2: 25, a3: 0, T3: 1},
@@ -103,7 +103,7 @@ var IAEA1009parameter = [
 	{age:"Adult Female", a1: 0.15, T1: 3, a2: 0.85, T2: 65, a3: 0.001, T3: 500},
 	{age:"Adult Male", a1: 0.15, T1: 3, a2: 0.85, T2: 90, a3: 0.001, T3: 500}
 ];
-var modelNames = ["IAEA1009Model", "halflifeModel"];
+var modelNames = ["MeloModel", "halflifeModel"];
 
 function selectModel() {
 	modelNames.forEach(function(d) {
@@ -210,8 +210,8 @@ function update() {
 	var modelName = document.getElementById("selectModel").options[modelIndex].value;
 	var Tp = document.getElementById("physicalHalflife").value * 365.24;
 
-	if (modelName == "IAEA1009Model") {
-		var parameter = IAEA1009parameter[document.getElementById("ageWeight").selectedIndex];
+	if (modelName == "MeloModel") {
+		var parameter = MeloParameter[document.getElementById("ageWeight").selectedIndex];
 		a1 = parameter.a1;
 		a2 = parameter.a2;
 		a3 = parameter.a3;
