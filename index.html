@@ -233,6 +233,10 @@ function update() {
 	var modelName = document.getElementById("selectModel").options[modelIndex].value;
 	// 物理学的半減期を取得
 	var Tp = document.getElementById("physicalHalflife").value * 365.24;
+	if (Tp <= 0) { // 0以下なら1年に強制変換
+		document.getElementById("physicalHalflife").value = 1;
+		Tp = 365.24;
+	}
 
 	// モデルのパラメータを取得
 	if (modelName == "ICRP56Model") {
@@ -256,14 +260,11 @@ function update() {
 	if (modelName == "halflifeModel") {
 		// 生物学的半減期を取得
 		T1 = document.getElementById("biologicalHalflife").value;
-		if (T1 <= 0) {
-			alert("生物学的半減期には正の値を入れてください");
-			return ;
+		if (T1 <= 0) { // 0以下なら1日に強制変換
+			T1 = document.getElementById("biologicalHalflife").value = 1;
 		}
 		a1 = 1;
 	}
-
-	// console.log("a1=",a1,"T1=",T1,"a2=",a2,"T2=",T2,"a3=",a3,"T3=",T3,"Tp=",Tp);
 
 	// IRF(Intake Retention Fraction): t=0に単位量急性摂取のときの解, つまりグリーン関数のこと
 	function irf(t) {
@@ -278,20 +279,18 @@ function update() {
 	// 最大時間を取得
 	maxTime = document.getElementById("maxTime").value;
 
-
-	// 値のチェック
+	// 不適当な値を強制変換
 	if (initial < 0) {
-		alert("初期摂取量には非負の値を入れてください");
-		return ;
-	} else if (interval <= 0) {
-		alert("慢性摂取の間隔には正の値を入れてください");
-		return ;
-	} else if (chronic < 0) {
-		alert("慢性摂取量には非負の値を入れてください");
-		return ;
-	} else 	if (maxTime <= 0) {
-		alert("最大時間には正の値を入れてください");
-		return ;
+		initial =document.getElementById("initial").value = 0;
+	}
+	if (interval <= 0) {
+		interval = document.getElementById("interval").value = 1;
+	}
+	if (chronic < 0) {
+		chronic = document.getElementById("chronic").value = 0;
+	}
+	if (maxTime <= 0) {
+		maxTime = document.getElementById("maxTime").value = 0;
 	}
 
 	// データ再計算
