@@ -30,7 +30,7 @@ input[type=text] {
 	height: 500px;
 }
 
-#control {
+#sidePanel {
 	float: left;
 	width: 320px;
 	height: 500px;
@@ -41,7 +41,7 @@ input[type=text] {
 <div id="graph">
 <svg></svg>
 </div>
-
+<div id="sidePanel">
 <div id="control">
 <p>放射性物質を摂取したときの体内残留量を選択した体内動態モデルに基づいて計算し, グラフ表示します。</p>
 <p>データを半角数字で入力して更新ボタンを押してください。</p>
@@ -98,8 +98,11 @@ input[type=text] {
 慢性摂取量: <input type="text" value="1" id="interval">日ごとに<input type="text" value="1" id="chronic">Bq<br>
 時間軸: <input type="text" value="1000" id="maxTime">日後まで表示<br>
 </form>
-
 </div><!-- control -->
+<div id="result">
+定常状態での体内残留量は<span id="steady"></span> Bq
+</div>
+</div><!-- sidePanel -->
 <script>
 (function() {
 
