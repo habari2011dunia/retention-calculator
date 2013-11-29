@@ -100,7 +100,7 @@ input[type=text] {
 </form>
 </div><!-- control -->
 <div id="result">
-定常状態での体内残留量は<span id="steady"></span> Bq
+定常状態での体内残留量は <strong><span id="steady"></span> Bq</strong>
 </div>
 </div><!-- sidePanel -->
 <script>
@@ -299,6 +299,7 @@ function update() {
 
 	// 定常状態での量
 	var steady = chronic/interval/Math.log(2)*(a1*T1 + a2*T2 + a3*T3);
+	document.getElementById("steady").innerHTML = steady.toPrecision(3);
 
 	// 2段階のアニメーションで変形する
 	// 1段階目: 最初の1秒間
