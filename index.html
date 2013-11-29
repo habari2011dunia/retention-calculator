@@ -294,6 +294,9 @@ function update() {
 		}
 	});
 
+	// 定常状態での量
+	var steady = chronic/interval/Math.log(2)*(a1*T1 + a2*T2 + a3*T3);
+
 	// 2段階のアニメーションで変形する
 	// 1段階目: 最初の1秒間
 	// 折れ線を描き直す
