@@ -239,31 +239,22 @@ function update() {
 	}
 
 	// モデルのパラメータを取得
-	if (modelName == "ICRP56Model") {
-		var parameter = ICRP56Parameter[document.getElementById("age").selectedIndex];
-		a1 = parameter.a1;
-		a2 = parameter.a2;
-		T1 = parameter.T1;
-		T2 = parameter.T2;
-	}
-
-	if (modelName == "MeloModel") {
-		var parameter = MeloParameter[document.getElementById("ageWeight").selectedIndex];
-		a1 = parameter.a1;
-		a2 = parameter.a2;
-		a3 = parameter.a3;
-		T1 = parameter.T1;
-		T2 = parameter.T2;
-		T3 = parameter.T3;
-	}
-
-	if (modelName == "halflifeModel") {
-		// 生物学的半減期を取得
-		T1 = document.getElementById("biologicalHalflife").value;
-		if (T1 <= 0) { // 0以下なら1日に強制変換
-			T1 = document.getElementById("biologicalHalflife").value = 1;
-		}
-		a1 = 1;
+	switch (modelName) {
+		case "ICRP56Model":
+			var p = ICRP56Parameter[document.getElementById("age").selectedIndex];
+			a1 = p.a1; a2 = p.a2; T1 = p.T1; T2 = p.T2;
+			break;
+		case "MeloModel":
+			var p = MeloParameter[document.getElementById("ageWeight").selectedIndex];
+			a1 = p.a1; a2 = p.a2; a3 = p.a3; T1 = p.T1;	T2 = p.T2; T3 = p.T3;
+			break;
+		case "halflifeModel":
+			// 生物学的半減期を取得
+			T1 = document.getElementById("biologicalHalflife").value;
+			if (T1 <= 0) { // 0以下なら1日に強制変換
+				T1 = document.getElementById("biologicalHalflife").value = 1;
+			}
+			a1 = 1;
 	}
 
 	// IRF(Intake Retention Fraction): t=0に単位量急性摂取のときの解, つまりグリーン関数のこと
