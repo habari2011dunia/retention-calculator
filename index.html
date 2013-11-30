@@ -20,6 +20,15 @@
 	stroke-width: 2;
 }
 
+.grid line{
+	stroke: lightgrey;
+}
+
+.grid path {
+	fill: none;
+	stroke: none;
+}
+
 input[type=text] {
 	width: 50px;
 }
@@ -181,16 +190,38 @@ var yScale = d3.scale.linear()
 
 // 軸となるg要素を作る関数
 var xAxis = d3.svg.axis()
-	xAxis.scale(xScale)
+	.scale(xScale)
 	.orient("bottom");
 var yAxis = d3.svg.axis()
-	yAxis.scale(yScale)
+	.scale(yScale)
 	.orient("left");
+
+// グリッドを作る関数
+var xGrid = d3.svg.axis()
+	.scale(xScale)
+	.orient("bottom")
+	.tickSize(-h+margin.top+margin.bottom, 0, 0)
+	.tickFormat("");
+var yGrid = d3.svg.axis()
+	.scale(yScale)
+	.orient("left")
+	.tickSize(-w+margin.left+margin.right, 0, 0)
+	.tickFormat("");
 
 // 折れ線となるpath要素のd属性を計算する関数
 var line = d3.svg.line()
 	.x(function(d) { return xScale(d.time); })
 	.y(function(d) { return yScale(d.value); });
+
+// グリッド線となるg要素をsvg要素の子要素として追加
+svg.append("g")
+	.attr("class", "x grid")
+	.attr("transform", "translate(0,"+(h-margin.bottom)+")")
+	.call(xGrid);
+svg.append("g")
+	.attr("class", "y grid")
+	.attr("transform", "translate("+ margin.left +","+margin.top+")")
+	.call(yGrid);
 
 // x軸となるg要素をsvg要素の子要素として追加
 svg.append("g")
