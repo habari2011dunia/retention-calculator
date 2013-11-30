@@ -220,7 +220,7 @@ svg.append("g")
 	.call(xGrid);
 svg.append("g")
 	.attr("class", "y grid")
-	.attr("transform", "translate("+ margin.left +","+margin.top+")")
+	.attr("transform", "translate("+ margin.left + ",0)")
 	.call(yGrid);
 
 // x軸となるg要素をsvg要素の子要素として追加
@@ -355,6 +355,17 @@ function update() {
 		.delay(1000)
 		.duration(1000)
 		.call(yAxis);
+	// グリッドを描き直す
+	svg.select(".x.grid")
+		.transition()
+		.delay(1000)
+		.duration(1000)
+		.call(xGrid);
+	svg.select(".y.grid")
+		.transition()
+		.delay(1000)
+		.duration(1000)
+		.call(yGrid);
 	// 軸に合わせて折れ線を描き直す
 	svg.select(".line")
 		.transition()
