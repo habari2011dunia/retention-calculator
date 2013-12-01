@@ -59,38 +59,7 @@ input[type=text] {
 
 モデルを選択:
 <select id="selectModel"></select><br>
-
-<div id="ICRP56Model">
-年齢:
-<select id="age">
-	<option>3ヶ月</option>
-	<option>1歳</option>
-	<option>5歳</option>
-	<option>10歳</option>
-	<option>15歳</option>
-	<option selected>成人</option>
-</select><br>
-</div>
-
-<div id="MeloModel">
-年齢・体重:
-<select id="ageWeight">
-	<option>0-16歳, 3-6kg</option>
-	<option>0-16歳, 7-10kg</option>
-	<option>0-16歳, 11-15kg</option>
-	<option>0-16歳, 16-30kg</option>
-	<option>0-16歳, 31-40kg</option>
-	<option>0-16歳, 41-50kg</option>
-	<option>0-16歳, 51-60kg</option>
-	<option>0-16歳, 61-70kg</option>
-	<option>成人女性</option>
-	<option selected>成人男性</option>
-</select><br>
-</div>
-
-<div id="halflifeModel">
-生物学的半減期: <input type="text" value="110" id="biologicalHalflife">日
-</div>
+<select id="selectSubject"></select><br>
 
 核種:
 <select id="selectNuclide">
@@ -137,20 +106,38 @@ var MeloParameter = [
 ];
 var modelNames = ["ICRP56Model", "MeloModel", "halflifeModel"];
 
-document.getElementById("selectModel").add(new Option("ICRP publ. 56", "ICRP56Model"));
-document.getElementById("selectModel").add(new Option("Melo et al(1997)", "MeloModel"));
-document.getElementById("selectModel").add(new Option("生物学的半減期を入力", "halflifeModel"));
+var selectModel = document.getElementById("selectModel");
+selectModel.add(new Option("ICRP publ. 56", "ICRP56Model"));
+selectModel.add(new Option("Melo et al(1997)", "MeloModel"));
+selectModel.add(new Option("生物学的半減期を入力", "halflifeModel"));
 
-function selectModel() {
-	modelNames.forEach(function(d) {
-		document.getElementById(d).style.display = "none";
-	});
+function changeModel() {
 	var i = document.getElementById("selectModel").selectedIndex;
-	document.getElementById(modelNames[i]).style.display = "block";
+
+	var selectSubject = document.getElementById("selectSubject");
+	while(selectSubject.options.length) {
+		selectSubject.remove(0);
+	}
+	switch(modelNames[i]) {
+		case "ICRP56Model":
+			["3ヶ月", "1歳", "5歳", "10歳", "15歳", "成人"].forEach(function(s) {
+				selectSubject.add(new Option(s));
+			});
+			selectSubject.selectedIndex = 5;
+			break;
+		case "MeloModel":
+			["0-16歳, 3-6kg", "0-16歳, 7-10kg", "0-16歳, 11-15kg", "0-16歳, 16-30kg", "0-16歳, 31-40kg", "0-16歳, 41-50kg", "0-16歳, 51-60kg", "0-16歳, 61-70kg", "成人女性", "成人男性"].forEach(function(s) {
+				selectSubject.add(new Option(s));
+			});
+			selectSubject.selectedIndex = 9;
+			break;
+		case "halflifeModel":
+			selectSubject.innerHTML = '生物学的半減期: <input type="text" value="110" id="biologicalHalflife">日';
+	}
 }
 
-document.getElementById("selectModel").onchange = selectModel;
-selectModel();
+selectModel.onchange = changeModel;
+changeModel();
 
 // 核種選択
 var nuclides = [
@@ -277,11 +264,11 @@ function update() {
 	// モデルのパラメータを取得
 	switch (modelName) {
 		case "ICRP56Model":
-			var p = ICRP56Parameter[document.getElementById("age").selectedIndex];
+			var p = ICRP56Parameter[selectSubject.selectedIndex];
 			a1 = p.a1; a2 = p.a2; T1 = p.T1; T2 = p.T2;
 			break;
 		case "MeloModel":
-			var p = MeloParameter[document.getElementById("ageWeight").selectedIndex];
+			var p = MeloParameter[selectSubject.selectedIndex];
 			a1 = p.a1; a2 = p.a2; a3 = p.a3; T1 = p.T1;	T2 = p.T2; T3 = p.T3;
 			break;
 		case "halflifeModel":
