@@ -333,8 +333,8 @@ function update() {
 	data.forEach(function(d, i) {
 		d.time = i * timeStep; // 時間
 		d.value = initial * irf(d.time); // 初期摂取分
-		for (var j = 0; interval*j < d.time; j++) { // 慢性摂取分
-			d.value += chronic * irf(d.time-interval*j);
+		for (var j = 0; interval*j < end-start; j++) { // 慢性摂取分
+			d.value += chronic * irf(d.time-start-interval*j);
 		}
 	});
 
