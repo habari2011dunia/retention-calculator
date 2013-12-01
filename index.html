@@ -298,6 +298,26 @@ function update() {
 		return t >= 0 ? (a1*Math.pow(0.5, t/T1)+a2*Math.pow(0.5, t/T2)+a3*Math.pow(0.5, t/T3))*Math.pow(0.5, t/Tp) : 0;
 	}
 
+	// 不適当な値を強制変換
+	if (document.getElementById("initial").value < 0) {
+		document.getElementById("initial").value = 0;
+	}
+	if (document.getElementById("interval").value < 0.1) {
+		document.getElementById("interval").value = 0.1;
+	}
+	if (document.getElementById("chronic").value < 0) {
+		document.getElementById("chronic").value = 0;
+	}
+	if (document.getElementById("maxTime").value <= 0) {
+		document.getElementById("maxTime").value = 0;
+	}
+	if (document.getElementById("start").value < 0) {
+		document.getElementById("start").value = 0;
+	}
+	if (document.getElementById("end").value < document.getElementById("start").value) {
+		document.getElementById("end").value = document.getElementById("start").value;
+	}
+
 	// 初期摂取量を取得
 	var initial = document.getElementById("initial").value;
 	// 慢性摂取量を取得
@@ -307,26 +327,6 @@ function update() {
 	var end = document.getElementById("end").value;
 	// 最大時間を取得
 	maxTime = document.getElementById("maxTime").value;
-
-	// 不適当な値を強制変換
-	if (initial < 0) {
-		initial =document.getElementById("initial").value = 0;
-	}
-	if (interval <= 0) {
-		interval = document.getElementById("interval").value = 1;
-	}
-	if (chronic < 0) {
-		chronic = document.getElementById("chronic").value = 0;
-	}
-	if (maxTime <= 0) {
-		maxTime = document.getElementById("maxTime").value = 0;
-	}
-	if (start < 0) {
-		start = document.getElementById("start").value = 0;
-	}
-	if (end < start) {
-		end = document.getElementById("end").value = start;
-	}
 
 	// データ再計算
 	timeStep = maxTime/stepsNumber;
