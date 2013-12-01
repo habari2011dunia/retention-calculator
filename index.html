@@ -58,11 +58,7 @@ input[type=text] {
 <input type="button" value="更新" id="update"><br>
 
 モデルを選択:
-<select id="selectModel">
-	<option value="ICRP56Model" selected>ICRP publ. 56</option>
-	<option value="MeloModel">Melo et al(1997)</option>
-	<option value="halflifeModel">生物学的半減期を入力</option>
-</select><br>
+<select id="selectModel"></select><br>
 
 <div id="ICRP56Model">
 年齢:
@@ -140,6 +136,10 @@ var MeloParameter = [
 	{age:"Adult Male", a1: 0.15, T1: 3, a2: 0.85, T2: 90, a3: 0.001, T3: 500}
 ];
 var modelNames = ["ICRP56Model", "MeloModel", "halflifeModel"];
+
+document.getElementById("selectModel").add(new Option("ICRP publ. 56", "ICRP56Model"));
+document.getElementById("selectModel").add(new Option("Melo et al(1997)", "MeloModel"));
+document.getElementById("selectModel").add(new Option("生物学的半減期を入力", "halflifeModel"));
 
 function selectModel() {
 	modelNames.forEach(function(d) {
