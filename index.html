@@ -314,7 +314,7 @@ function update() {
 	if (document.getElementById("start").value < 0) {
 		document.getElementById("start").value = 0;
 	}
-	if (document.getElementById("end").value < document.getElementById("start").value) {
+	if (Number(document.getElementById("end").value) < Number(document.getElementById("start").value)) {
 		document.getElementById("end").value = document.getElementById("start").value;
 	}
 
