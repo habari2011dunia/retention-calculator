@@ -1,7 +1,9 @@
 ﻿[
 	{
+		"name": "ICRP56",
 		"label": "ICRP publ. 56",
 		"subjectLabel": "年齢",
+		"selectedIndex": 5,
 		"parameter": [
 			{"label": "3ヶ月", "age": 0.25, "weight":6,   "a": [0, 1],       "T": [1, 16]},
 			{"label": "1歳",   "age": 1,    "weight":9.8, "a": [0, 1],       "T": [1, 13]},
@@ -12,8 +14,10 @@
 		]
 	},
 	{
+		"name": "Melo",
 		"label": "Melo et al(1997)",
 		"subjectLabel": "年齢・体重",
+		"selectedIndex": 9,
 		"parameter": [
 			{"label": "0-16歳, 3-6kg",   "a": [0.25, 0.75], "T": [3, 13]},
 			{"label": "0-16歳, 7-10kg",  "a": [0.25, 0.75], "T": [3, 19]},
@@ -25,6 +29,15 @@
 			{"label": "0-16歳, 61-70kg", "a": [0.25, 0.75, 0.001], "T": [3, 72, 500]},
 			{"label": "成人女性",        "a": [0.15, 0.85, 0.001], "T": [3, 65, 500]},
 			{"label": "成人男性",        "a": [0.15, 0.85, 0.001], "T": [3, 90, 500]}
+		]
+	},
+	{
+		"name": "halflife",
+		"label": "生物学的半減期を入力",
+		"subjectLabel": "",
+		"selectedIndex": 0,
+		"parameter": [
+			{"label": "", "a": [1], "T": [110]}
 		]
 	}
 ]
