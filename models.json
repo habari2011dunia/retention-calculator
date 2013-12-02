@@ -34,10 +34,10 @@
 	{
 		"name": "halflife",
 		"label": "生物学的半減期を入力",
-		"subjectLabel": "",
+		"subjectLabel": "-",
 		"selectedIndex": 0,
 		"parameter": [
-			{"label": "", "a": [1], "T": [110]}
+			{"label": "-", "a": [1], "T": [110]}
 		]
 	}
 ]

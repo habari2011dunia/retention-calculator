@@ -60,6 +60,9 @@ input[type=text] {
 モデルを選択:
 <select id="selectModel"></select><br>
 <select id="selectSubject"></select><br>
+<div id="inputHalflife">
+生物学的半減期: <input type="text" value="110" id="biologicalHalflife">日
+</div>
 
 核種:
 <select id="selectNuclide">
@@ -81,26 +84,27 @@ input[type=text] {
 </div><!-- sidePanel -->
 <script>
 (function() {
-d3.json("models.json", function(error, models) { // モデルデータのロード
+document.getElementById("inputHalflife").style.display = "none";
 
-// console.log(error);
-// console.log(models);
+d3.json("models.json", function(error, models) { // モデルデータのロード
 
 // モデル選択メニューの作成
 var selectModel = document.getElementById("selectModel");
 models.forEach(function(m) {
 	selectModel.add(new Option(m.label));
 });
-// selectModel.add(new Option("生物学的半減期を入力", "halflifeModel"));
 selectModel.onchange = changeModel;
 
 function changeModel() {
+	document.getElementById("inputHalflife").style.display = "none";
+
 	// 選択されたモデルの取得
 	var i = document.getElementById("selectModel").selectedIndex;
 	var selectedModel = models[i];
 
 	// 条件選択メニューの更新
 	var selectSubject = document.getElementById("selectSubject");
+	selectSubject.style.display = "block";
 	while(selectSubject.options.length) { // 一旦すべての選択肢を消去
 		selectSubject.remove(0);
 	}
@@ -109,13 +113,13 @@ function changeModel() {
 	});
 
 	// 既定の選択
-	// selectSubject.selectedIndex = ;
+	selectSubject.selectedIndex = selectedModel.selectedIndex;
 
-	/* 手入力モード
-	if(selectedModel.label ==  "halflifeModel") {
-		selectSubject.innerHTML = '生物学的半減期: <input type="text" value="110" id="biologicalHalflife">日';
+	// 手入力モード
+	if(selectedModel.name ==  "halflife") {
+		selectSubject.style.display = "none";
+		document.getElementById("inputHalflife").style.display = "block";
 	}
-	*/
 }
 
 changeModel();
@@ -247,16 +251,14 @@ function update() {
 	var a = selectedParameter.a;
 	var T = selectedParameter.T;
 
-	/* 
-	if ("半減期モデルの場合") {
-			// 生物学的半減期を取得
-			T1 = document.getElementById("biologicalHalflife").value;
-			if (T1 <= 0) { // 0以下なら1日に強制変換
-				T1 = document.getElementById("biologicalHalflife").value = 1;
-			}
-			a1 = 1;
+	if (selectedModel.name == "halflife") {
+		// 生物学的半減期を取得
+		if (document.getElementById("biologicalHalflife").value <= 0) { // 0以下なら1日に強制変換
+			document.getElementById("biologicalHalflife").value = 1;
+		}
+		T = [document.getElementById("biologicalHalflife").value];
+		a = [1];
 	}
-	*/
 
 	// IRF(Intake Retention Fraction): t=0に単位量急性摂取のときの解, つまりグリーン関数のこと
 	function irf(t) {
