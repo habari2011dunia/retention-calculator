@@ -52,11 +52,13 @@ input[type=text] {
 </div>
 <div id="sidePanel">
 <div id="control">
-<p>放射性物質を摂取したときの体内残留量を選択した体内動態モデルに基づいて計算し, グラフ表示します。</p>
-<p>データを半角数字で入力して更新ボタンを押してください。</p>
+<p>放射性物質を摂取したときの体内残留量を選択した体内動態モデルに基づいて計算し, グラフ表示します。<br>
+データを半角数字で入力して更新ボタンを押してください。</p>
+
 <form>
 <input type="button" value="更新" id="update"><br>
 
+<div id="model">
 モデルを選択: <select id="selectModel"></select><br>
 <span id="subjectLine">対象を選択: <select id="selectSubject"></select></span>
 <span id="halflifeLine">生物学的半減期: <input type="text" value="110" id="biologicalHalflife">日</span><br>
@@ -66,17 +68,25 @@ input[type=text] {
 	<option>セシウム134</option>
 </select><br>
 物理学的半減期: <input type="text" value="30.17" id="physicalHalflife">年<br>
+</div>
 
+<div id="intake">
 初期摂取: <input type="text" value="0" id="initial">Bq<br>
 慢性摂取: <br>
 &nbsp;&nbsp;<input type="text" value="0" id="start">日目から<input type="text" value="1000" id="end">日目まで<br>
 &nbsp;&nbsp;<input type="text" value="1" id="interval">日ごとに<input type="text" value="1" id="chronic">Bqずつ<br>
+</div>
+
+<div id="axis">
 時間軸: <input type="text" value="1000" id="maxTime">日後まで表示<br>
+</div>
 </form>
 </div><!-- control -->
+
 <div id="result">
-定常状態での体内残留量は <strong><span id="steady"></span> Bq</strong>
+<p>定常状態での体内残留量は <strong><span id="steady"></span> Bq</strong></p>
 </div>
+
 </div><!-- sidePanel -->
 <script>
 (function() {
