@@ -57,13 +57,9 @@ input[type=text] {
 <form>
 <input type="button" value="更新" id="update"><br>
 
-モデルを選択:
-<select id="selectModel"></select><br>
-<select id="selectSubject"></select><br>
-<div id="inputHalflife">
-生物学的半減期: <input type="text" value="110" id="biologicalHalflife">日
-</div>
-
+モデルを選択: <select id="selectModel"></select><br>
+<span id="subjectLine">対象を選択: <select id="selectSubject"></select></span>
+<span id="halflifeLine">生物学的半減期: <input type="text" value="110" id="biologicalHalflife">日</span><br>
 核種:
 <select id="selectNuclide">
 	<option>セシウム137</option>
@@ -84,7 +80,7 @@ input[type=text] {
 </div><!-- sidePanel -->
 <script>
 (function() {
-document.getElementById("inputHalflife").style.display = "none";
+document.getElementById("halflifeLine").style.display = "none";
 
 d3.json("models.json", function(error, models) { // モデルデータのロード
 
@@ -96,7 +92,8 @@ models.forEach(function(m) {
 selectModel.onchange = changeModel;
 
 function changeModel() {
-	document.getElementById("inputHalflife").style.display = "none";
+	document.getElementById("subjectLine").style.display = "inline";
+	document.getElementById("halflifeLine").style.display = "none";
 
 	// 選択されたモデルの取得
 	var i = document.getElementById("selectModel").selectedIndex;
@@ -104,7 +101,6 @@ function changeModel() {
 
 	// 条件選択メニューの更新
 	var selectSubject = document.getElementById("selectSubject");
-	selectSubject.style.display = "block";
 	while(selectSubject.options.length) { // 一旦すべての選択肢を消去
 		selectSubject.remove(0);
 	}
@@ -117,8 +113,8 @@ function changeModel() {
 
 	// 手入力モード
 	if(selectedModel.name ==  "halflife") {
-		selectSubject.style.display = "none";
-		document.getElementById("inputHalflife").style.display = "block";
+		document.getElementById("subjectLine").style.display = "none";
+		document.getElementById("halflifeLine").style.display = "inline";
 	}
 }
 

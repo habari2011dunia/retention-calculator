@@ -2,7 +2,6 @@
 	{
 		"name": "ICRP56",
 		"label": "ICRP publ. 56",
-		"subjectLabel": "年齢",
 		"selectedIndex": 5,
 		"parameter": [
 			{"label": "3ヶ月", "age": 0.25, "weight":6,   "a": [0, 1],       "T": [1, 16]},
@@ -16,7 +15,6 @@
 	{
 		"name": "Melo",
 		"label": "Melo et al(1997)",
-		"subjectLabel": "年齢・体重",
 		"selectedIndex": 9,
 		"parameter": [
 			{"label": "0-16歳, 3-6kg",   "a": [0.25, 0.75], "T": [3, 13]},
@@ -34,7 +32,6 @@
 	{
 		"name": "halflife",
 		"label": "生物学的半減期を入力",
-		"subjectLabel": "-",
 		"selectedIndex": 0,
 		"parameter": [
 			{"label": "-", "a": [1], "T": [110]}
