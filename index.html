@@ -81,6 +81,10 @@ input[type=text] {
 </div><!-- sidePanel -->
 <script>
 (function() {
+d3.json("models.json", function(error, models) {
+	console.log(error);
+	console.log(models);
+});
 
 // モデル選択
 var ICRP56Parameter = [
