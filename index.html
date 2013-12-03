@@ -81,7 +81,7 @@ input[type=text] {
 <div id="axis">
 時間軸: <input type="text" value="1000" id="maxTime">日後まで表示<br>
 縦軸:
-<select>
+<select id="selectPerWeight">
 	<option value="wholeBody">体内残留量[Bq]</option>
 	<option value="perWeight">体重あたりの体内残留量[Bq/kg]</option>
 </select>を表示
@@ -90,7 +90,7 @@ input[type=text] {
 </div><!-- control -->
 
 <div id="result">
-<p>定常状態での体内残留量は <strong><span id="steady"></span> Bq</strong></p>
+<p>定常状態での体内残留量は <strong><span id="steady"></span></strong></p>
 </div>
 
 </div><!-- sidePanel -->
@@ -226,11 +226,13 @@ svg.append("g")
 	.attr("transform", "translate("+margin.left+",0)")
 	.call(yAxis)
 	.append("text") // ラベル
+	.attr("class", "y label")
 	.text("体内残留量[Bq]")
 	.attr("font-size", 10)
 	.attr("transform", "rotate(-90)")
 	.attr("dy", "-3.8em")
-	.attr("dx", -h/2);
+	.attr("dx", -(h+margin.top-margin.bottom)/2)
+	.attr("text-anchor", "middle");
 
 // 折れ線となるpath要素をsvg要素の子要素として追加
 svg.append("path")
@@ -301,6 +303,9 @@ function update() {
 	if (document.getElementById("start").value < 0) {
 		document.getElementById("start").value = 0;
 	}
+	if (document.getElementById("weight").value <= 0) {
+		document.getElementById("weight").value = 1;
+	}
 	if (Number(document.getElementById("end").value) < Number(document.getElementById("start").value)) {
 		document.getElementById("end").value = document.getElementById("start").value;
 	}
@@ -314,6 +319,12 @@ function update() {
 	var end = document.getElementById("end").value;
 	// 最大時間を取得
 	maxTime = document.getElementById("maxTime").value;
+	// 体重を取得
+	var weight = 1;
+	var perWeight = document.getElementById("selectPerWeight").selectedIndex == 1;
+	if(perWeight) {
+		weight = document.getElementById("weight").value;
+	}
 
 	// データ再計算
 	timeStep = maxTime/stepsNumber;
@@ -323,6 +334,7 @@ function update() {
 		for (var j = 0; interval*j < end-start; j++) { // 慢性摂取分
 			d.value += chronic * irf(d.time-start-interval*j);
 		}
+		d.value = d.value/weight;
 	});
 
 	// 定常状態での量
@@ -330,7 +342,7 @@ function update() {
 	for(var i=0; i<a.length; i++) {
 		steady += a[i] * T[i];
 	}
-	steady = chronic/interval/Math.log(2)*steady;
+	steady = chronic/interval/Math.log(2)*steady/weight;
 	document.getElementById("steady").innerHTML = steady.toPrecision(3);
 
 	// 2段階のアニメーションで変形する
@@ -356,6 +368,12 @@ function update() {
 		.delay(1000)
 		.duration(1000)
 		.call(yAxis);
+	svg.select(".y.label")
+		.transition()
+		.delay(1000)
+		.duration(1000)
+		.text(function() { return perWeight ? "体重あたりの体内残留量[Bq/kg]": "体内残留量[Bq]";});
+
 	// グリッドを描き直す
 	svg.select(".x.grid")
 		.transition()
