@@ -83,14 +83,14 @@ input[type=text] {
 縦軸:
 <select id="selectPerWeight">
 	<option value="wholeBody">体内残留量[Bq]</option>
-	<option value="perWeight">体重あたりの体内残留量[Bq/kg]</option>
+	<option value="perWeight">体重あたり残留量[Bq/kg]</option>
 </select>を表示
 </div>
 </form>
 </div><!-- control -->
 
 <div id="result">
-<p>定常状態での体内残留量は <strong><span id="steady"></span></strong></p>
+<p>定常状態での<span id="steady"></span></p>
 </div>
 
 </div><!-- sidePanel -->
@@ -343,7 +343,7 @@ function update() {
 		steady += a[i] * T[i];
 	}
 	steady = chronic/interval/Math.log(2)*steady/weight;
-	document.getElementById("steady").innerHTML = steady.toPrecision(3);
+	document.getElementById("steady").innerHTML = (perWeight ? "体重あたり" : "体内") + "残留量は" + "<strong>" + steady.toPrecision(3) + (perWeight ? " Bq/kg" : " Bq") + "</strong>"
 
 	// 2段階のアニメーションで変形する
 	// 1段階目: 最初の1秒間
@@ -372,7 +372,7 @@ function update() {
 		.transition()
 		.delay(1000)
 		.duration(1000)
-		.text(function() { return perWeight ? "体重あたりの体内残留量[Bq/kg]": "体内残留量[Bq]";});
+		.text(function() { return perWeight ? "体重あたり残留量[Bq/kg]": "体内残留量[Bq]";});
 
 	// グリッドを描き直す
 	svg.select(".x.grid")
