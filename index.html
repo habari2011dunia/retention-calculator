@@ -61,7 +61,9 @@ input[type=text] {
 <div id="model">
 モデルを選択: <select id="selectModel"></select><br>
 <span id="subjectLine">対象を選択: <select id="selectSubject"></select></span>
-<span id="halflifeLine">生物学的半減期: <input type="text" value="110" id="biologicalHalflife">日</span><br>
+<span id="halflifeLine">生物学的半減期: <input type="text" value="110" id="biologicalHalflife">日</span>
+体重: <input type="text" value="70" id="weight">kg
+<br>
 核種:
 <select id="selectNuclide">
 	<option>セシウム137</option>
@@ -76,9 +78,13 @@ input[type=text] {
 &nbsp;&nbsp;<input type="text" value="0" id="start">日目から<input type="text" value="1000" id="end">日目まで<br>
 &nbsp;&nbsp;<input type="text" value="1" id="interval">日ごとに<input type="text" value="1" id="chronic">Bqずつ<br>
 </div>
-
 <div id="axis">
 時間軸: <input type="text" value="1000" id="maxTime">日後まで表示<br>
+縦軸:
+<select>
+	<option value="wholeBody">体内残留量[Bq]</option>
+	<option value="perWeight">体重あたりの体内残留量[Bq/kg]</option>
+</select>を表示
 </div>
 </form>
 </div><!-- control -->
