@@ -100,7 +100,7 @@ document.getElementById("halflifeLine").style.display = "none";
 
 d3.json("models.json", function(error, models) { // モデルデータのロード
 
-// モデル選択/対象のselect要素
+// モデル選択/対象選択のselect要素
 var selectModel = document.getElementById("selectModel");
 var selectSubject = document.getElementById("selectSubject");
 
@@ -123,8 +123,8 @@ function changeModel() {
 	while(selectSubject.options.length) { // 一旦すべての選択肢を消去
 		selectSubject.remove(0);
 	}
-	selectedModel.parameter.forEach(function(p) {
-		selectSubject.add(new Option(p.label));
+	selectedModel.subject.forEach(function(s) {
+		selectSubject.add(new Option(s.label));
 	});
 
 	// 既定の選択
@@ -146,10 +146,9 @@ function changeSubject() {
 	var selectedModel = models[modelIndex];
 	// 選択された対象を取得
 	var subjectIndex = document.getElementById("selectSubject").selectedIndex;
-	// モデルのパラメータを取得
-	var selectedParameter = selectedModel.parameter[subjectIndex];
+	var selectedSubject = selectedModel.subject[subjectIndex];
 	// 体重フォームの値を書き直す
-	document.getElementById("weight").value = selectedParameter.weight;
+	document.getElementById("weight").value = selectedSubject.weight;
 }
 
 // 初期化
@@ -281,26 +280,23 @@ function update() {
 	// 選択された条件を取得
 	var subjectIndex = document.getElementById("selectSubject").selectedIndex;
 	// モデルのパラメータを取得
-	var selectedParameter = selectedModel.parameter[subjectIndex];
-	var a = selectedParameter.a;
-	var T = selectedParameter.T;
+	var modelParameter = selectedModel.subject[subjectIndex].parameter;
 
 	if (selectedModel.name == "halflife") {
 		// 生物学的半減期を取得
 		if (document.getElementById("biologicalHalflife").value <= 0) { // 0以下なら1日に強制変換
 			document.getElementById("biologicalHalflife").value = 1;
 		}
-		T = [document.getElementById("biologicalHalflife").value];
-		a = [1];
+		modelParameter.T = [document.getElementById("biologicalHalflife").value];
 	}
 
 	// IRF(Intake Retention Fraction): t=0に単位量急性摂取のときの解, つまりグリーン関数のこと
 	function irf(t) {
 		if (t >= 0) {
 			var value = 0;
-			for(var i = 0; i < a.length; i++) {
-				value += a[i]*Math.pow(0.5, t/T[i]);
-			}
+			modelParameter.forEach(function(p) {
+				value += p.a*Math.pow(0.5, t/p.T);
+			});
 			return value;
 		} else if (t < 0) {
 			return 0;
@@ -359,9 +355,9 @@ function update() {
 
 	// 定常状態での量
 	var steady = 0;
-	for(var i=0; i<a.length; i++) {
-		steady += a[i] * T[i];
-	}
+	modelParameter.forEach(function(p) {
+		steady += p.a * p.T;
+	});
 	steady = chronic/interval/Math.log(2)*steady/weight;
 	document.getElementById("steady").innerHTML = (perWeight ? "体重あたり" : "体内") + "残留量は" + "<strong>" + steady.toPrecision(3) + (perWeight ? " Bq/kg" : " Bq") + "</strong>"
 
