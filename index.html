@@ -100,13 +100,17 @@ document.getElementById("halflifeLine").style.display = "none";
 
 d3.json("models.json", function(error, models) { // モデルデータのロード
 
-// モデル選択メニューの作成
+// モデル選択/対象のselect要素
 var selectModel = document.getElementById("selectModel");
+var selectSubject = document.getElementById("selectSubject");
+
+// モデル選択メニューの作成
 models.forEach(function(m) {
 	selectModel.add(new Option(m.label));
 });
-selectModel.onchange = changeModel;
 
+// モデル変更時
+selectModel.onchange = changeModel;
 function changeModel() {
 	document.getElementById("subjectLine").style.display = "inline";
 	document.getElementById("halflifeLine").style.display = "none";
@@ -116,7 +120,6 @@ function changeModel() {
 	var selectedModel = models[i];
 
 	// 条件選択メニューの更新
-	var selectSubject = document.getElementById("selectSubject");
 	while(selectSubject.options.length) { // 一旦すべての選択肢を消去
 		selectSubject.remove(0);
 	}
@@ -132,9 +135,26 @@ function changeModel() {
 		document.getElementById("subjectLine").style.display = "none";
 		document.getElementById("halflifeLine").style.display = "inline";
 	}
+	changeSubject();
 }
 
+// 対象変更時
+selectSubject.onchange = changeSubject;
+function changeSubject() {
+	// 選択されたモデルを取得
+	var modelIndex = document.getElementById("selectModel").selectedIndex;
+	var selectedModel = models[modelIndex];
+	// 選択された対象を取得
+	var subjectIndex = document.getElementById("selectSubject").selectedIndex;
+	// モデルのパラメータを取得
+	var selectedParameter = selectedModel.parameter[subjectIndex];
+	// 体重フォームの値を書き直す
+	document.getElementById("weight").value = selectedParameter.weight;
+}
+
+// 初期化
 changeModel();
+changeSubject();
 
 // 核種選択
 var nuclides = [
