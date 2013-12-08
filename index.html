@@ -372,7 +372,6 @@ function update() {
 		var selectNuclide = document.getElementById("selectNuclide");
 		var nuclide = selectNuclide.options[selectNuclide.selectedIndex].value;
 		var doseCoefficient = Number(selectedSubject.doseCoefficient[nuclide]);
-		console.log(doseCoefficient);
 		var dose = totalIntake * doseCoefficient * 1e+6;
 		document.getElementById("committedEffectiveDose").innerHTML = "<strong>" + dose.toPrecision(2) + " μSv</strong>";
 	}
