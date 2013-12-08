@@ -4,12 +4,12 @@
 		"label": "ICRP publ. 56",
 		"selectedIndex": 5,
 		"subject": [
-			{"label": "3ヶ月", "age": 0.25, "weight": 6,   "parameter": [{"a": 1, "T": 16}] },
-			{"label": "1歳",   "age": 1,    "weight": 9.8, "parameter": [{"a": 1, "T": 13}] },
-			{"label": "5歳",   "age": 5,    "weight": 19,  "parameter": [{"a": 0.45, "T": 9.1}, {"a": 0.55, "T": 30}] },
-			{"label": "10歳",  "age": 10,   "weight": 32,  "parameter": [{"a": 0.3,  "T": 5.8}, {"a": 0.7,  "T": 50}] },
-			{"label": "15歳",  "age": 15,   "weight": 55,  "parameter": [{"a": 0.13, "T": 2.2}, {"a": 0.87, "T": 93}] },
-			{"label": "成人",  "age": 20,   "weight": 70,  "parameter": [{"a": 0.1,  "T": 2},   {"a": 0.9,  "T": 110}] }
+			{"label": "3ヶ月", "age": 0.25, "weight": 6,   "parameter": [{"a": 1, "T": 16}], "doseCoefficient": {"Cs134": 2.6e-08, "Cs137": 1e-08} },
+			{"label": "1歳",   "age": 1,    "weight": 9.8, "parameter": [{"a": 1, "T": 13}], "doseCoefficient": {"Cs134": 1.6e-08, "Cs137": 1.2e-08} },
+			{"label": "5歳",   "age": 5,    "weight": 19,  "parameter": [{"a": 0.45, "T": 9.1}, {"a": 0.55, "T": 30}], "doseCoefficient": {"Cs134": 1.3e-08, "Cs137": 9.6e-09} },
+			{"label": "10歳",  "age": 10,   "weight": 32,  "parameter": [{"a": 0.3,  "T": 5.8}, {"a": 0.7,  "T": 50}], "doseCoefficient": {"Cs134": 1.4e-08, "Cs137": 1e-08} },
+			{"label": "15歳",  "age": 15,   "weight": 55,  "parameter": [{"a": 0.13, "T": 2.2}, {"a": 0.87, "T": 93}], "doseCoefficient": {"Cs134": 1.9e-08, "Cs137": 1.3e-08} },
+			{"label": "成人",  "age": 20,   "weight": 70,  "parameter": [{"a": 0.1,  "T": 2},   {"a": 0.9,  "T": 110}], "doseCoefficient": {"Cs134": 1.9e-08, "Cs137": 1.3e-08} }
 		]
 	},
 	{
