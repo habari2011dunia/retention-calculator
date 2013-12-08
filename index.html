@@ -66,8 +66,8 @@ input[type=text] {
 <br>
 核種:
 <select id="selectNuclide">
-	<option>セシウム137</option>
-	<option>セシウム134</option>
+	<option value="Cs137">セシウム137</option>
+	<option value="Cs134">セシウム134</option>
 </select><br>
 物理学的半減期: <input type="text" value="30.17" id="physicalHalflife">年<br>
 </div>
@@ -91,7 +91,7 @@ input[type=text] {
 
 <div id="result">
 <p>総摂取量は<span id="totalIntake"></span></br>
-<span id="committedDoseLine">預託実効線量は<span id="committedDose"></span></br></span>
+<span id="doseLine">預託実効線量は<span id="committedEffectiveDose"></span></br></span>
 定常状態での<span id="steady"></span></p>
 </div>
 
@@ -99,7 +99,7 @@ input[type=text] {
 <script>
 (function() {
 document.getElementById("halflifeLine").style.display = "none";
-document.getElementById("committedDoseLine").style.display = "inline";
+document.getElementById("doseLine").style.display = "inline";
 
 d3.json("models.json", function(error, models) { // モデルデータのロード
 
@@ -117,7 +117,7 @@ selectModel.onchange = changeModel;
 function changeModel() {
 	document.getElementById("subjectLine").style.display = "inline";
 	document.getElementById("halflifeLine").style.display = "none";
-	document.getElementById("committedDoseLine").style.display = "none";
+	document.getElementById("doseLine").style.display = "none";
 
 	// 選択されたモデルの取得
 	var i = document.getElementById("selectModel").selectedIndex;
@@ -136,7 +136,7 @@ function changeModel() {
 
 	// 預託実効線量の表示
 	if(selectedModel.name == "ICRP56") {
-		document.getElementById("committedDoseLine").style.display = "inline";
+		document.getElementById("doseLine").style.display = "inline";
 	}
 
 	// 手入力モード
@@ -286,10 +286,11 @@ function update() {
 	// 選択されたモデルを取得
 	var modelIndex = document.getElementById("selectModel").selectedIndex;
 	var selectedModel = models[modelIndex];
-	// 選択された条件を取得
+	// 選択された対象を取得
 	var subjectIndex = document.getElementById("selectSubject").selectedIndex;
+	var selectedSubject = selectedModel.subject[subjectIndex];
 	// モデルのパラメータを取得
-	var modelParameter = selectedModel.subject[subjectIndex].parameter;
+	var modelParameter = selectedSubject.parameter;
 
 	if (selectedModel.name == "halflife") {
 		// 生物学的半減期を取得
@@ -365,6 +366,16 @@ function update() {
 	// 総摂取量
 	var totalIntake = initial + chronic*(end - start)/interval;
 	document.getElementById("totalIntake").innerHTML = "<strong>" + totalIntake.toPrecision(3) + " Bq</strong>";
+
+	// 預託実効線量
+	if("doseCoefficient" in selectedSubject) {
+		var selectNuclide = document.getElementById("selectNuclide");
+		var nuclide = selectNuclide.options[selectNuclide.selectedIndex].value;
+		var doseCoefficient = Number(selectedSubject.doseCoefficient[nuclide]);
+		console.log(doseCoefficient);
+		var dose = totalIntake * doseCoefficient * 1e+6;
+		document.getElementById("committedEffectiveDose").innerHTML = "<strong>" + dose.toPrecision(2) + " μSv</strong>";
+	}
 
 	// 定常状態での量
 	var steady = 0;
