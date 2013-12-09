@@ -403,7 +403,7 @@ function update() {
 	// 定常状態での量
 	var steady = 0;
 	modelParameter.forEach(function(p) {
-		steady += p.a * p.T;
+		steady += p.a / (1/Tp + 1/p.T);
 	});
 	steady = chronic/interval/Math.LN2*steady;
 	document.getElementById("steady").innerHTML = (function() {
