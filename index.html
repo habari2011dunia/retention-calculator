@@ -346,7 +346,7 @@ function update() {
 		modelParameter.forEach(function(p) {
 			value.push(t >= 0 ? p.a*Math.pow(0.5, t/p.T) : 0);
 		});
-		return d3.sum(value);
+		return d3.sum(value)*Math.pow(0.5, t/Tp);
 	}
 
 	// IEF(Intake Excretion Fraction): 排出の場合
@@ -355,7 +355,7 @@ function update() {
 		modelParameter.forEach(function(p) {
 			value.push(t >= 0 ? p.a*Math.LN2/p.T*Math.pow(0.5, t/p.T) : 0);
 		});
-		return d3.sum(value);
+		return d3.sum(value)*Math.pow(0.5, t/Tp);
 	}
 	// 尿による排出の割合を80%と仮定
 	var urineRatio = 0.8;
