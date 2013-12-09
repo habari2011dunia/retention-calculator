@@ -274,50 +274,9 @@ d3.select("#update").on("click", function() {
 
 // 更新
 function update() {
-	// 物理学的半減期を取得
-	var Tp = document.getElementById("physicalHalflife").value * 365.24;
-	if (Tp <= 0) { // 0以下なら1年に強制変換
-		document.getElementById("physicalHalflife").value = 1;
-		Tp = 365.24;
-	}
-
-	// 選択されたモデルを取得
-	var modelIndex = document.getElementById("selectModel").selectedIndex;
-	var selectedModel = models[modelIndex];
-	// 選択された対象を取得
-	var subjectIndex = document.getElementById("selectSubject").selectedIndex;
-	var selectedSubject = selectedModel.subject[subjectIndex];
-	// モデルのパラメータを取得
-	var modelParameter = selectedSubject.parameter;
-
-	if (selectedModel.name == "halflife") {
-		// 生物学的半減期を取得
-		if (document.getElementById("biologicalHalflife").value <= 0) { // 0以下なら1日に強制変換
-			document.getElementById("biologicalHalflife").value = 1;
-		}
-		modelParameter.T = [document.getElementById("biologicalHalflife").value];
-	}
-
-	// IRF(Intake Retention Fraction): t=0に単位量急性摂取のときの解, つまりグリーン関数のこと
-	function irf(t) {
-		if (t >= 0) {
-			var value = 0;
-			modelParameter.forEach(function(p) {
-				value += p.a*Math.pow(0.5, t/p.T);
-			});
-			return value;
-		} else if (t < 0) {
-			return 0;
-		}
-	}
-
-	// 排出率[Bq/日]/残留量[Bq]比を計算
-	var excretionPerRetention = 0;
-	modelParameter.forEach(function(p) {
-		excretionPerRetention += p.a * Math.LN2/p.T;
-	});
-	// 尿による排出の割合を80%と仮定
-	var urineRatio = 0.8; 
+	////////////////
+	// 入力データ //
+	////////////////
 
 	// 不適当な値を強制変換
 	if (document.getElementById("initial").value < 0) {
@@ -342,34 +301,88 @@ function update() {
 		document.getElementById("end").value = document.getElementById("start").value;
 	}
 
-	// 初期摂取量を取得
+	// 物理学的半減期
+	var Tp = document.getElementById("physicalHalflife").value * 365.24;
+	if (Tp <= 0) { // 0以下なら1年に強制変換
+		document.getElementById("physicalHalflife").value = 1;
+		Tp = 365.24;
+	}
+	// モデル
+	var modelIndex = document.getElementById("selectModel").selectedIndex;
+	var selectedModel = models[modelIndex];
+	// 対象
+	var subjectIndex = document.getElementById("selectSubject").selectedIndex;
+	var selectedSubject = selectedModel.subject[subjectIndex];
+	// 体重
+	var weight = Number(document.getElementById("weight").value);
+	// モデルのパラメータ
+	var modelParameter = selectedSubject.parameter;
+	if (selectedModel.name == "halflife") { // 半減期モデルなら生物学的半減期を取得
+		if (document.getElementById("biologicalHalflife").value <= 0) { // 0以下なら1日に強制変換
+			document.getElementById("biologicalHalflife").value = 1;
+		}
+		modelParameter.T = [document.getElementById("biologicalHalflife").value];
+	}
+	// 初期摂取
 	var initial = Number(document.getElementById("initial").value);
-	// 慢性摂取量を取得
+	// 慢性摂取
 	var interval = Number(document.getElementById("interval").value);
 	var chronic = Number(document.getElementById("chronic").value);
 	var start = Number(document.getElementById("start").value);
 	var end = Number(document.getElementById("end").value);
-	// 最大時間を取得
+	// 最大時間
 	maxTime = Number(document.getElementById("maxTime").value);
-	// 計算する値を取得
+	// 計算する値
 	var selectValue = document.getElementById("selectValue");
-	var selectedValue = selectValue.options[selectValue.selectedIndex];
+	var selectedValue = selectValue.options[selectValue.selectedIndex].value;
+
+	//////////
+	// 計算 //
+	//////////
+
+	// IRF(Intake Retention Fraction): t=0に単位量急性摂取のときの解, つまりグリーン関数のこと
+	function irf(t) {
+		var value = [];
+		modelParameter.forEach(function(p) {
+			value.push(t >= 0 ? p.a*Math.pow(0.5, t/p.T) : 0);
+		});
+		return d3.sum(value);
+	}
+
+	// IEF(Intake Excretion Fraction): 排出の場合
+	function ief(t) {
+		var value = [];
+		modelParameter.forEach(function(p) {
+			value.push(t >= 0 ? p.a*Math.LN2/p.T*Math.pow(0.5, t/p.T) : 0);
+		});
+		return d3.sum(value);
+	}
+	// 尿による排出の割合を80%と仮定
+	var urineRatio = 0.8;
 
 	// データ再計算
 	timeStep = maxTime/stepsNumber;
 	data.forEach(function(d, i) {
 		d.time = i * timeStep; // 時間
-		d.value = initial * irf(d.time); // 初期摂取分
-		for (var j = 0; interval*j < end-start; j++) { // 慢性摂取分
-			d.value += chronic * irf(d.time-start-interval*j);
-		}
 		switch(selectedValue) {
+			case "wholeBody":
+				d.value = initial * irf(d.time); // 初期摂取分
+				for (var j = 0; interval*j < end-start; j++) { // 慢性摂取分
+					d.value += chronic * irf(d.time-start-interval*j);
+				}
+				break;
 			case "perWeight":
-				var weight = Number(document.getElementById("weight").value);
+				d.value = initial * irf(d.time);
+				for (var j = 0; interval*j < end-start; j++) {
+					d.value += chronic * irf(d.time-start-interval*j);
+				}
 				d.value = d.value/weight;
 				break;
 			case "urine":
-				d.value = d.value * excretionPerWeight * urineRatio;
+				d.value = initial * ief(d.time) * urineRatio;
+				for (var j = 0; interval*j < end-start; j++) {
+					d.value += chronic * ief(d.time-start-interval*j) * urineRatio;
+				}
 				break;
 		}
 	});
@@ -392,8 +405,17 @@ function update() {
 	modelParameter.forEach(function(p) {
 		steady += p.a * p.T;
 	});
-	steady = chronic/interval/Math.LN2*steady/weight;
-	document.getElementById("steady").innerHTML = (perWeight ? "体重あたり" : "体内") + "残留量は" + "<strong>" + steady.toPrecision(3) + (perWeight ? " Bq/kg" : " Bq") + "</strong>"
+	steady = chronic/interval/Math.LN2*steady;
+	document.getElementById("steady").innerHTML = (function() {
+		switch(selectedValue) {
+			case "perWeight":
+				return "体重あたり残留量は" + "<strong>" + (steady/weight).toPrecision(3) + " Bq/kg</strong>";
+				break;
+			default:
+				return "体内残留量は" + "<strong>" + steady.toPrecision(3) + " Bq</strong>";
+				break;
+		}
+	})();
 
 	// 2段階のアニメーションで変形する
 	// 1段階目: 最初の1秒間
