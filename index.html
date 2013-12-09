@@ -78,9 +78,10 @@ input[type=text] {
 <div id="axis">
 時間軸: <input type="text" value="1000" id="maxTime">日後まで表示<br>
 縦軸:
-<select id="selectPerWeight">
+<select id="selectValue">
 	<option value="wholeBody">体内残留量[Bq]</option>
 	<option value="perWeight">体重あたり残留量[Bq/kg]</option>
+	<option value="urine">1日あたり尿排出量[Bq/日]</option>
 </select>を表示
 </div>
 </form>
@@ -178,7 +179,7 @@ var maxTime = 1000, stepsNumber = 1000,
 // データ初期化
 var data = [];
 for(var i=0; i<stepsNumber; i++) {
-	data.push({time: i*timeStep, retention: 0});
+	data.push({time: i*timeStep, value: 0});
 }
 
 // 表示領域のサイズと余白
@@ -195,7 +196,7 @@ var xScale = d3.scale.linear()
 	.range([margin.left, w-margin.right])
 	.nice();
 var yScale = d3.scale.linear()
-	.domain([0, d3.max(data, function(d) { return d.retention; } )])
+	.domain([0, d3.max(data, function(d) { return d.value; } )])
 	.range([h-margin.bottom, margin.top])
 	.nice();
 
@@ -222,7 +223,7 @@ var yGrid = d3.svg.axis()
 // 折れ線となるpath要素のd属性を計算する関数
 var line = d3.svg.line()
 	.x(function(d) { return xScale(d.time); })
-	.y(function(d) { return yScale(d.retention); });
+	.y(function(d) { return yScale(d.value); });
 
 // グリッド線となるg要素をsvg要素の子要素として追加
 svg.append("g")
@@ -310,11 +311,13 @@ function update() {
 		}
 	}
 
-	// 排出率/残留量比を計算
+	// 排出率[Bq/日]/残留量[Bq]比を計算
 	var excretionPerRetention = 0;
 	modelParameter.forEach(function(p) {
 		excretionPerRetention += p.a * Math.LN2/p.T;
 	});
+	// 尿による排出の割合を80%と仮定
+	var urineRatio = 0.8; 
 
 	// 不適当な値を強制変換
 	if (document.getElementById("initial").value < 0) {
@@ -348,23 +351,27 @@ function update() {
 	var end = Number(document.getElementById("end").value);
 	// 最大時間を取得
 	maxTime = Number(document.getElementById("maxTime").value);
-	// 体重を取得
-	var weight = 1;
-	var perWeight = document.getElementById("selectPerWeight").selectedIndex == 1;
-	if(perWeight) {
-		weight = Number(document.getElementById("weight").value);
-	}
+	// 計算する値を取得
+	var selectValue = document.getElementById("selectValue");
+	var selectedValue = selectValue.options[selectValue.selectedIndex];
 
 	// データ再計算
 	timeStep = maxTime/stepsNumber;
 	data.forEach(function(d, i) {
 		d.time = i * timeStep; // 時間
-		d.retention = initial * irf(d.time); // 初期摂取分
+		d.value = initial * irf(d.time); // 初期摂取分
 		for (var j = 0; interval*j < end-start; j++) { // 慢性摂取分
-			d.retention += chronic * irf(d.time-start-interval*j);
+			d.value += chronic * irf(d.time-start-interval*j);
 		}
-		d.excretion = d.retention * excretionPerRetention;
-		d.retention = d.retention/weight;
+		switch(selectedValue) {
+			case "perWeight":
+				var weight = Number(document.getElementById("weight").value);
+				d.value = d.value/weight;
+				break;
+			case "urine":
+				d.value = d.value * excretionPerWeight * urineRatio;
+				break;
+		}
 	});
 
 	// 総摂取量
@@ -398,7 +405,7 @@ function update() {
 
 	// 2段階目: 1秒待って次の1秒間
 	// y軸のデータ範囲を取り直す
-	yScale.domain([0, d3.max(data, function(d) { return d.retention; } )]);
+	yScale.domain([0, d3.max(data, function(d) { return d.value; } )]);
 	xScale.domain([0, maxTime]);
 	// 軸を描き直す
 	svg.select(".x.axis")
@@ -415,7 +422,19 @@ function update() {
 		.transition()
 		.delay(1000)
 		.duration(1000)
-		.text(function() { return perWeight ? "体重あたり残留量[Bq/kg]": "体内残留量[Bq]";});
+		.text(function() { 
+			switch(selectedValue) {
+				case "wholeBody": 
+					return "体内残留量[Bq]";
+					break;
+				case "perWeight":
+					return "体重あたり残留量[Bq/kg]";
+					break;
+				case "urine":
+					return "1日あたり尿排出量[Bq/日]";
+					break;
+			}
+		});
 
 	// グリッドを描き直す
 	svg.select(".x.grid")
