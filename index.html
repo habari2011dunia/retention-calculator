@@ -310,6 +310,12 @@ function update() {
 		}
 	}
 
+	// 排出率/残留量比を計算
+	var excretionPerRetention = 0;
+	modelParameter.forEach(function(p) {
+		excretionPerRetention += p.a * Math.LN2/p.T;
+	});
+
 	// 不適当な値を強制変換
 	if (document.getElementById("initial").value < 0) {
 		document.getElementById("initial").value = 0;
@@ -378,7 +384,7 @@ function update() {
 	modelParameter.forEach(function(p) {
 		steady += p.a * p.T;
 	});
-	steady = chronic/interval/Math.log(2)*steady/weight;
+	steady = chronic/interval/Math.LN2*steady/weight;
 	document.getElementById("steady").innerHTML = (perWeight ? "体重あたり" : "体内") + "残留量は" + "<strong>" + steady.toPrecision(3) + (perWeight ? " Bq/kg" : " Bq") + "</strong>"
 
 	// 2段階のアニメーションで変形する
