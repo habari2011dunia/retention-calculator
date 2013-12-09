@@ -353,9 +353,9 @@ function update() {
 	function ief(t) {
 		var value = [];
 		modelParameter.forEach(function(p) {
-			value.push(t >= 0 ? p.a*Math.LN2/p.T*Math.pow(0.5, t/p.T) : 0);
+			value.push(t >= 0 ? p.a/p.T*Math.pow(0.5, t/p.T) : 0);
 		});
-		return d3.sum(value)*Math.pow(0.5, t/Tp);
+		return d3.sum(value)*Math.LN2*Math.pow(0.5, t/Tp);
 	}
 	// 尿による排出の割合を80%と仮定
 	var urineRatio = 0.8;
@@ -409,13 +409,17 @@ function update() {
 	document.getElementById("steady").innerHTML = (function() {
 		switch(selectedValue) {
 			case "perWeight":
-				return "体重あたり残留量は" + "<strong>" + (steady/weight).toPrecision(3) + " Bq/kg</strong>";
+				return "体重あたり残留量は<strong>" + (steady/weight).toPrecision(3) + " Bq/kg</strong>";
 				break;
 			default:
-				return "体内残留量は" + "<strong>" + steady.toPrecision(3) + " Bq</strong>";
+				return "体内残留量は<strong>" + steady.toPrecision(3) + " Bq</strong>";
 				break;
 		}
 	})();
+
+	////////////
+	// グラフ //
+	////////////
 
 	// 2段階のアニメーションで変形する
 	// 1段階目: 最初の1秒間
