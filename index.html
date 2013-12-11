@@ -96,6 +96,11 @@ input[type=text] {
 </div><!-- sidePanel -->
 <script>
 (function() {
+// 科学的表記のメソッドを追加
+Number.prototype.toScientificNotation = function(x) {
+	return this.toPrecision(x).replace("e", "&times;10<sup>").replace("+", "") + "</sup>";
+}
+
 document.getElementById("halflifeLine").style.display = "none";
 document.getElementById("doseLine").style.display = "inline";
 
@@ -389,7 +394,7 @@ function update() {
 
 	// 総摂取量
 	var totalIntake = initial + chronic*(end - start)/interval;
-	document.getElementById("totalIntake").innerHTML = "<strong>" + totalIntake.toPrecision(3) + " Bq</strong>";
+	document.getElementById("totalIntake").innerHTML = "<strong>" + totalIntake.toScientificNotation(3) + " Bq</strong>";
 
 	// 預託実効線量
 	if("doseCoefficient" in selectedSubject) {
@@ -397,7 +402,7 @@ function update() {
 		var nuclide = selectNuclide.options[selectNuclide.selectedIndex].value;
 		var doseCoefficient = Number(selectedSubject.doseCoefficient[nuclide]);
 		var dose = totalIntake * doseCoefficient * 1e+6;
-		document.getElementById("committedEffectiveDose").innerHTML = "<strong>" + dose.toPrecision(2) + " μSv</strong>";
+		document.getElementById("committedEffectiveDose").innerHTML = "<strong>" + dose.toScientificNotation(2) + " μSv</strong>";
 	}
 
 	// 定常状態での量
@@ -409,10 +414,10 @@ function update() {
 	document.getElementById("steady").innerHTML = (function() {
 		switch(selectedValue) {
 			case "perWeight":
-				return "体重あたり残留量は<strong>" + (steady/weight).toPrecision(3) + " Bq/kg</strong>";
+				return "体重あたり残留量は<strong>" + (steady/weight).toScientificNotation(3) + " Bq/kg</strong>";
 				break;
 			default:
-				return "体内残留量は<strong>" + steady.toPrecision(3) + " Bq</strong>";
+				return "体内残留量は<strong>" + steady.toScientificNotation(3) + " Bq</strong>";
 				break;
 		}
 	})();
