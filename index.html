@@ -160,6 +160,7 @@ function changeSubject() {
 	var selectedSubject = selectedModel.subject[subjectIndex];
 	// 体重フォームの値を書き直す
 	inputWeight.value = selectedSubject.weight;
+	changeWeight();
 }
 
 // 体重変更時
@@ -418,6 +419,12 @@ function update() {
 					d.value += chronic * ief(d.time-start-interval*j) * urineRatio;
 				}
 				break;
+			case "urineDensity": // 尿中濃度[Bq/L]
+				d.value = initial * ief(d.time) * urineRatio;
+				for (var j = 0; interval*j < end-start; j++) {
+					d.value += chronic * ief(d.time-start-interval*j) * urineRatio / urineVolume;
+				}
+				break;
 		}
 	});
 
@@ -433,7 +440,7 @@ function update() {
 	document.getElementById("total").innerHTML = totalHTML;
 
 	// 定常状態での量
-	var steady = {retention: 0, perWeight: 0, dose: 0};
+	var steady = {retention: 0, perWeight: 0, dose: 0, urineDensity: 0};
 	var steadyHTML = "<strong>定常状態では</strong>";
 	modelParameter.forEach(function(p) {
 		steady.retention += p.a / (1/Tp + 1/p.T);
@@ -446,6 +453,8 @@ function update() {
 		steady.dose = steady.retention / irfArea * doseCoefficient * 1e+6 * 365.24;
 		steadyHTML = steadyHTML + "<br>&nbsp;&nbsp;1年あたり被ばく量: <strong>" + steady.dose.toScientificNotation(2) + " μSv/年</strong>";
 	}
+	steady.urineDensity = urineRatio / urineVolume;
+	steadyHTML = steadyHTML + "<br>&nbsp;&nbsp;尿中濃度: <strong>" + steady.urineDensity.toScientificNotation(3) + " Bq/L</strong>";
 	document.getElementById("steady").innerHTML = steadyHTML;
 
 	////////////
@@ -489,6 +498,9 @@ function update() {
 					break;
 				case "urine":
 					return "1日あたり尿排出量[Bq/日]";
+					break;
+				case "urineDensity":
+					return "尿中濃度[Bq/L]";
 					break;
 				case "dose":
 					return "1年あたり被ばく量[μBq/日]";
