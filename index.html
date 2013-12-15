@@ -388,6 +388,16 @@ function update() {
 				}
 				d.value = d.value/weight;
 				break;
+			case "dose": // 1日あたり被ばく量[Sv/日]
+				d.value = initial * irf(d.time); // 初期摂取分
+				for (var j = 0; interval*j < end-start; j++) { // 慢性摂取分
+					d.value += chronic * irf(d.time-start-interval*j);
+				}
+				var selectNuclide = document.getElementById("selectNuclide");
+				var nuclide = selectNuclide.options[selectNuclide.selectedIndex].value;
+				var doseCoefficient = Number(selectedSubject.doseCoefficient[nuclide]);
+				d.value = d.value * doseCoefficient * 1e+6 / irfArea;
+				break;
 			case "urine": // 1日あたり尿排出量[Bq/日]
 				d.value = initial * ief(d.time) * urineRatio;
 				for (var j = 0; interval*j < end-start; j++) {
