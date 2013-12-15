@@ -353,8 +353,13 @@ function update() {
 		});
 		return d3.sum(value)*Math.pow(0.5, t/Tp);
 	}
+	// IRFの積分[日]
+	var irfArea = 0;
+	modelParameter.forEach(function(p) {
+		irfArea += p.a*p.T/Math.LN2;
+	});
 
-	// IEF(Intake Excretion Fraction): 排出の場合
+	// IEF(Intake Excretion Fraction): t=0に単位量急性摂取のときの排出率[1/日]
 	function ief(t) {
 		var value = [];
 		modelParameter.forEach(function(p) {
@@ -370,20 +375,20 @@ function update() {
 	data.forEach(function(d, i) {
 		d.time = i * timeStep; // 時間
 		switch(selectedValue) {
-			case "wholeBody":
+			case "wholeBody": // 体内残留量[Bq]
 				d.value = initial * irf(d.time); // 初期摂取分
 				for (var j = 0; interval*j < end-start; j++) { // 慢性摂取分
 					d.value += chronic * irf(d.time-start-interval*j);
 				}
 				break;
-			case "perWeight":
+			case "perWeight": // 体重あたり残留量[Bq/kg]
 				d.value = initial * irf(d.time);
 				for (var j = 0; interval*j < end-start; j++) {
 					d.value += chronic * irf(d.time-start-interval*j);
 				}
 				d.value = d.value/weight;
 				break;
-			case "urine":
+			case "urine": // 1日あたり尿排出量[Bq/日]
 				d.value = initial * ief(d.time) * urineRatio;
 				for (var j = 0; interval*j < end-start; j++) {
 					d.value += chronic * ief(d.time-start-interval*j) * urineRatio;
