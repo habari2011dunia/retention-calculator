@@ -135,7 +135,7 @@ function changeModel() {
 	selectValue.add(new Option("1日あたり尿排出量[Bq/日]", "urine"));
 
 	if(selectedModel.name == "ICRP56") {
-		selectValue.add(new Option("1日あたり被ばく量[μSv/日]", "dose")); // 被ばく量表示の選択肢追加
+		selectValue.add(new Option("1年あたり被ばく量[μSv/年]", "dose")); // 被ばく量表示の選択肢追加
 	}
 
 	// 手入力モード
@@ -393,12 +393,12 @@ function update() {
 				}
 				d.value = d.value/weight;
 				break;
-			case "dose": // 1日あたり被ばく量[uSv/日]
+			case "dose": // 1年あたり被ばく量[uSv/年]
 				d.value = initial * irf(d.time);
 				for (var j = 0; interval*j < end-start; j++) {
 					d.value += chronic * irf(d.time-start-interval*j);
 				}
-				d.value = d.value * doseCoefficient * 1e+6 / irfArea;
+				d.value = d.value * doseCoefficient * 1e+6 / irfArea * 365.24;
 				break;
 			case "urine": // 1日あたり尿排出量[Bq/日]
 				d.value = initial * ief(d.time) * urineRatio;
@@ -431,8 +431,8 @@ function update() {
 	steady.perWeight = steady.retention/weight;
 	steadyHTML = steadyHTML + "<br>&nbsp;&nbsp;体重あたり残留量: <strong>" + steady.perWeight.toScientificNotation(3) + " Bq/kg</strong>";
 	if (doseCoefficient) {
-		steady.dose = steady.retention / irfArea * doseCoefficient * 1e+6;
-		steadyHTML = steadyHTML + "<br>&nbsp;&nbsp;1日あたり被ばく量: <strong>" + steady.dose.toScientificNotation(3) + " μSv/日</strong>";
+		steady.dose = steady.retention / irfArea * doseCoefficient * 1e+6 * 365.24;
+		steadyHTML = steadyHTML + "<br>&nbsp;&nbsp;1年あたり被ばく量: <strong>" + steady.dose.toScientificNotation(2) + " μSv/年</strong>";
 	}
 	document.getElementById("steady").innerHTML = steadyHTML;
 
@@ -479,7 +479,7 @@ function update() {
 					return "1日あたり尿排出量[Bq/日]";
 					break;
 				case "dose":
-					return "1日あたり被ばく量[μBq/日]";
+					return "1年あたり被ばく量[μBq/日]";
 					break;
 			}
 		});
