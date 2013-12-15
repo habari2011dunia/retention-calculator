@@ -16,3 +16,4 @@ ICRPモデルを選択した場合, 預託実効線量を計算して表示し�
 * 早野龍五 [『初期セシウム量，一日の摂取量，年齢区分 → 体内セシウム量変化をグラフに』](http://nucl.phys.s.u-tokyo.ac.jp/hayano/radiocesium/)
 * 早野龍五 [『放射性セシウムを時々食べる → 体内セシウム量変化をグラフに』](http://nucl.phys.s.u-tokyo.ac.jp/hayano/radiocesium/intermittent.html)
 * ICRP ["ICRP Database of Dose Coefficients: Workers and Members of the Public; Ver. 3.0"](http://www.icrp.org/page.asp?id=145)
+* 茨城大学有志の会 [『やっかいな放射線と向き合う資料編』](http://yakkaihousyasen.web.fc2.com/)
