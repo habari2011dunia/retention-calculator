@@ -411,28 +411,28 @@ function update() {
 
 	// 総量
 	var total = {intake: 0, dose: 0};
-	var totalHTML = "総計";
+	var totalHTML = "<strong>総計</strong>";
 	total.intake = initial + chronic*(end - start)/interval;
-	totalHTML = totalHTML + "<br>総摂取量: <strong>" + total.intake.toScientificNotation(3) + " Bq</strong>";
+	totalHTML = totalHTML + "<br>&nbsp;&nbsp;総摂取量: <strong>" + total.intake.toScientificNotation(3) + " Bq</strong>";
 	if(doseCoefficient) {
 		total.dose = total.intake * doseCoefficient * 1e+6;
-		totalHTML = totalHTML + "<br>預託実効線量: <strong>" + total.dose.toScientificNotation(2) + " μSv</strong>";
+		totalHTML = totalHTML + "<br>&nbsp;&nbsp;預託実効線量: <strong>" + total.dose.toScientificNotation(2) + " μSv</strong>";
 	}
 	document.getElementById("total").innerHTML = totalHTML;
 
 	// 定常状態での量
 	var steady = {retention: 0, perWeight: 0, dose: 0};
-	var steadyHTML = "定常状態";
+	var steadyHTML = "<strong>定常状態では</strong>";
 	modelParameter.forEach(function(p) {
 		steady.retention += p.a / (1/Tp + 1/p.T);
 	});
 	steady.retention = chronic/interval/Math.LN2*steady.retention;
-	steadyHTML = steadyHTML + "<br>体内残留量: <strong>" + steady.retention.toScientificNotation(3) + " Bq</strong>";
+	steadyHTML = steadyHTML + "<br>&nbsp;&nbsp;体内残留量: <strong>" + steady.retention.toScientificNotation(3) + " Bq</strong>";
 	steady.perWeight = steady.retention/weight;
-	steadyHTML = steadyHTML + "<br>体重あたり残留量: <strong>" + steady.perWeight.toScientificNotation(3) + " Bq/kg</strong>";
+	steadyHTML = steadyHTML + "<br>&nbsp;&nbsp;体重あたり残留量: <strong>" + steady.perWeight.toScientificNotation(3) + " Bq/kg</strong>";
 	if (doseCoefficient) {
 		steady.dose = steady.retention / irfArea * doseCoefficient * 1e+6;
-		steadyHTML = steadyHTML + "<br>1日あたり被ばく量: <strong>" + steady.dose.toScientificNotation(3) + " μSv/日</strong>";
+		steadyHTML = steadyHTML + "<br>&nbsp;&nbsp;1日あたり被ばく量: <strong>" + steady.dose.toScientificNotation(3) + " μSv/日</strong>";
 	}
 	document.getElementById("steady").innerHTML = steadyHTML;
 
