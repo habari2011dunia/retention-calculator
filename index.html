@@ -77,12 +77,7 @@ input[type=text] {
 </div>
 <div id="axis">
 時間軸: <input type="text" value="1000" id="maxTime">日後まで表示<br>
-縦軸:
-<select id="selectValue">
-	<option value="wholeBody">体内残留量[Bq]</option>
-	<option value="perWeight">体重あたり残留量[Bq/kg]</option>
-	<option value="urine">1日あたり尿排出量[Bq/日]</option>
-</select>を表示
+縦軸: <select id="selectValue"></select>を表示
 </div>
 </form>
 </div><!-- control -->
@@ -96,6 +91,11 @@ input[type=text] {
 </div><!-- sidePanel -->
 <script>
 (function() {
+// モデル,対象,表示値選択のselect要素
+var selectModel = document.getElementById("selectModel");
+var selectSubject = document.getElementById("selectSubject");
+var selectValue = document.getElementById("selectValue");
+
 // 科学的表記のメソッドを追加
 Number.prototype.toScientificNotation = function(x) {
 	return this.toPrecision(x).replace("e", "&times;10<sup>").replace("+", "") + "</sup>";
@@ -105,10 +105,6 @@ document.getElementById("halflifeLine").style.display = "none";
 document.getElementById("doseLine").style.display = "inline";
 
 d3.json("models.json", function(error, models) { // モデルデータのロード
-
-// モデル選択/対象選択のselect要素
-var selectModel = document.getElementById("selectModel");
-var selectSubject = document.getElementById("selectSubject");
 
 // モデル選択メニューの作成
 models.forEach(function(m) {
@@ -126,20 +122,26 @@ function changeModel() {
 	var i = document.getElementById("selectModel").selectedIndex;
 	var selectedModel = models[i];
 
-	// 条件選択メニューの更新
+	// 対象選択メニューの更新
 	while(selectSubject.options.length) { // 一旦すべての選択肢を消去
 		selectSubject.remove(0);
 	}
 	selectedModel.subject.forEach(function(s) {
 		selectSubject.add(new Option(s.label));
 	});
+	selectSubject.selectedIndex = selectedModel.selectedIndex; 	// 既定の選択
 
-	// 既定の選択
-	selectSubject.selectedIndex = selectedModel.selectedIndex;
+	// 表示量選択メニューの更新
+	while(selectValue.options.length) { // 一旦すべての選択肢を消去
+		selectValue.remove(0);
+	}
+	selectValue.add(new Option("体内残留量[Bq]", "wholeBody"));
+	selectValue.add(new Option("体重あたり残留量[Bq/kg]", "perWeight"));
+	selectValue.add(new Option("1日あたり尿排出量[Bq/日]", "urine"));
 
-	// 預託実効線量の表示
 	if(selectedModel.name == "ICRP56") {
-		document.getElementById("doseLine").style.display = "inline";
+		document.getElementById("doseLine").style.display = "inline"; // 預託実効線量の表示
+		selectValue.add(new Option("1日あたり被ばく量[μSv/日]", "dose")); // 被ばく量表示の選択肢追加
 	}
 
 	// 手入力モード
@@ -332,7 +334,7 @@ function update() {
 	var selectNuclide = document.getElementById("selectNuclide");
 	var nuclide = selectNuclide.options[selectNuclide.selectedIndex].value;
 	// 預託実効線量換算係数
-	var doseCoefficient;
+	var doseCoefficient = 0;
 	if("doseCoefficient" in selectedSubject) {
 		doseCoefficient = Number(selectedSubject.doseCoefficient[nuclide]);
 	}
