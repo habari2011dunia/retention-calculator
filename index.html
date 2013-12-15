@@ -160,14 +160,8 @@ function changeSubject() {
 	var selectedSubject = selectedModel.subject[subjectIndex];
 	// 体重フォームの値を書き直す
 	inputWeight.value = selectedSubject.weight;
-	changeWeight();
-}
-
-// 体重変更時
-inputWeight.onchange = changeWeight;
-function changeWeight() {
 	// 尿フォームの値を書き直す
-	document.getElementById("urineVolume").value = Number(inputWeight.value) * 0.024;
+	document.getElementById("urineVolume").value = selectedSubject.urine;
 }
 
 // 初期化
