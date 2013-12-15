@@ -91,10 +91,11 @@ input[type=text] {
 </div><!-- sidePanel -->
 <script>
 (function() {
-// モデル,対象,表示値選択のselect要素
+// モデル,対象,表示値選択のselect要素, 体重入力のinput要素
 var selectModel = document.getElementById("selectModel");
 var selectSubject = document.getElementById("selectSubject");
 var selectValue = document.getElementById("selectValue");
+var inputWeight = document.getElementById("weight");
 
 // 科学的表記のメソッドを追加
 Number.prototype.toScientificNotation = function(x) {
@@ -134,6 +135,7 @@ function changeModel() {
 	selectValue.add(new Option("体内残留量[Bq]", "wholeBody"));
 	selectValue.add(new Option("体重あたり残留量[Bq/kg]", "perWeight"));
 	selectValue.add(new Option("1日あたり尿排出量[Bq/日]", "urine"));
+	selectValue.add(new Option("尿中濃度[Bq/L]", "urineDensity"));
 
 	if(selectedModel.name == "ICRP56") {
 		selectValue.add(new Option("1年あたり被ばく量[μSv/年]", "dose")); // 被ばく量表示の選択肢追加
@@ -157,7 +159,14 @@ function changeSubject() {
 	var subjectIndex = document.getElementById("selectSubject").selectedIndex;
 	var selectedSubject = selectedModel.subject[subjectIndex];
 	// 体重フォームの値を書き直す
-	document.getElementById("weight").value = selectedSubject.weight;
+	inputWeight.value = selectedSubject.weight;
+}
+
+// 体重変更時
+inputWeight.onchange = changeWeight;
+function changeWeight() {
+	// 尿フォームの値を書き直す
+	document.getElementById("urineVolume").value = Number(inputWeight.value) * 0.024;
 }
 
 // 初期化
@@ -310,13 +319,15 @@ function update() {
 		Tp = 365.24;
 	}
 	// モデル
-	var modelIndex = document.getElementById("selectModel").selectedIndex;
+	var modelIndex = selectModel.selectedIndex;
 	var selectedModel = models[modelIndex];
 	// 対象
-	var subjectIndex = document.getElementById("selectSubject").selectedIndex;
+	var subjectIndex = selectSubject.selectedIndex;
 	var selectedSubject = selectedModel.subject[subjectIndex];
 	// 体重
-	var weight = Number(document.getElementById("weight").value);
+	var weight = Number(inputWeight.value);
+	// 尿量
+	var urineVolume = Number(document.getElementById("urineVolume").value);
 	// モデルのパラメータ
 	var modelParameter = selectedSubject.parameter;
 	if (selectedModel.name == "halflife") { // 半減期モデルなら生物学的半減期を取得
