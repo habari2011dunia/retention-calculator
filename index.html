@@ -334,7 +334,7 @@ function update() {
 	var selectNuclide = document.getElementById("selectNuclide");
 	var nuclide = selectNuclide.options[selectNuclide.selectedIndex].value;
 	// 預託実効線量換算係数
-	var doseCoefficient = 0;
+	var doseCoefficient = null;
 	if("doseCoefficient" in selectedSubject) {
 		doseCoefficient = Number(selectedSubject.doseCoefficient[nuclide]);
 	}
@@ -426,18 +426,22 @@ function update() {
 	}
 
 	// 定常状態での量
-	var steady = 0;
+	var steady = {retention: 0, perWeight: 0, dose: 0};
 	modelParameter.forEach(function(p) {
-		steady += p.a / (1/Tp + 1/p.T);
+		steady.retention += p.a / (1/Tp + 1/p.T);
 	});
-	steady = chronic/interval/Math.LN2*steady;
+	steady.retention = chronic/interval/Math.LN2*steady.retention;
+	steady.perWeight = steady.retention/weight;
+	if (doseCoefficient) {
+		steady.dose = steady.retention/irfArea * doseCoefficient * 1e-6;
+	}
 	document.getElementById("steady").innerHTML = (function() {
 		switch(selectedValue) {
 			case "perWeight":
-				return "体重あたり残留量は<strong>" + (steady/weight).toScientificNotation(3) + " Bq/kg</strong>";
+				return "体重あたり残留量は<strong>" + steady.perWeight.toScientificNotation(3) + " Bq/kg</strong>";
 				break;
 			default:
-				return "体内残留量は<strong>" + steady.toScientificNotation(3) + " Bq</strong>";
+				return "体内残留量は<strong>" + steady.retention.toScientificNotation(3) + " Bq</strong>";
 				break;
 		}
 	})();
@@ -483,6 +487,9 @@ function update() {
 					break;
 				case "urine":
 					return "1日あたり尿排出量[Bq/日]";
+					break;
+				case "dose":
+					return "1日あたり被ばく量[μBq/日]";
 					break;
 			}
 		});
