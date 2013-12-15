@@ -83,13 +83,8 @@ input[type=text] {
 </div><!-- control -->
 
 <div id="result">
-<p>
-<div id="total">
-総摂取量: <span id="totalIntake"></span></br>
-<span id="doseLine">預託実効線量: <span id="committedEffectiveDose"></span></br></span>
-</div>
-<div id="steady"></div>
-</p>
+<p id="total"></p>
+<p id="steady"></p>
 </div>
 
 </div><!-- sidePanel -->
@@ -105,9 +100,6 @@ Number.prototype.toScientificNotation = function(x) {
 	return this.toPrecision(x).replace("e", "&times;10<sup>").replace("+", "") + "</sup>";
 }
 
-document.getElementById("halflifeLine").style.display = "none";
-document.getElementById("doseLine").style.display = "inline";
-
 d3.json("models.json", function(error, models) { // モデルデータのロード
 
 // モデル選択メニューの作成
@@ -120,7 +112,6 @@ selectModel.onchange = changeModel;
 function changeModel() {
 	document.getElementById("subjectLine").style.display = "inline";
 	document.getElementById("halflifeLine").style.display = "none";
-	document.getElementById("doseLine").style.display = "none";
 
 	// 選択されたモデルの取得
 	var i = document.getElementById("selectModel").selectedIndex;
@@ -144,7 +135,6 @@ function changeModel() {
 	selectValue.add(new Option("1日あたり尿排出量[Bq/日]", "urine"));
 
 	if(selectedModel.name == "ICRP56") {
-		document.getElementById("doseLine").style.display = "inline"; // 預託実効線量の表示
 		selectValue.add(new Option("1日あたり被ばく量[μSv/日]", "dose")); // 被ばく量表示の選択肢追加
 	}
 
@@ -419,32 +409,30 @@ function update() {
 		}
 	});
 
-	// 総摂取量
-	var totalIntake = initial + chronic*(end - start)/interval;
-	document.getElementById("totalIntake").innerHTML = "<strong>" + totalIntake.toScientificNotation(3) + " Bq</strong>";
-
-	// 預託実効線量
-	if("doseCoefficient" in selectedSubject) {
-		var dose = totalIntake * doseCoefficient * 1e+6;
-		document.getElementById("committedEffectiveDose").innerHTML = "<strong>" + dose.toScientificNotation(2) + " μSv</strong>";
+	// 総量
+	var total = {intake: 0, dose: 0};
+	var totalHTML = "総計";
+	total.intake = initial + chronic*(end - start)/interval;
+	totalHTML = totalHTML + "<br>総摂取量: <strong>" + total.intake.toScientificNotation(3) + " Bq</strong>";
+	if(doseCoefficient) {
+		total.dose = total.intake * doseCoefficient * 1e+6;
+		totalHTML = totalHTML + "<br>預託実効線量: <strong>" + total.dose.toScientificNotation(2) + " μSv</strong>";
 	}
+	document.getElementById("total").innerHTML = totalHTML;
 
 	// 定常状態での量
 	var steady = {retention: 0, perWeight: 0, dose: 0};
+	var steadyHTML = "定常状態";
 	modelParameter.forEach(function(p) {
 		steady.retention += p.a / (1/Tp + 1/p.T);
 	});
 	steady.retention = chronic/interval/Math.LN2*steady.retention;
+	steadyHTML = steadyHTML + "<br>体内残留量: <strong>" + steady.retention.toScientificNotation(3) + " Bq</strong>";
 	steady.perWeight = steady.retention/weight;
+	steadyHTML = steadyHTML + "<br>体重あたり残留量: <strong>" + steady.perWeight.toScientificNotation(3) + " Bq/kg</strong>";
 	if (doseCoefficient) {
 		steady.dose = steady.retention / irfArea * doseCoefficient * 1e+6;
-	}
-	// 表示
-	var steadyHTML = "定常状態<br>";
-	steadyHTML = steadyHTML + "体内残留量: <strong>" + steady.retention.toScientificNotation(3) + " Bq</strong>";
-	steadyHTML = steadyHTML + "<br>体重あたり残留量: <strong>" + steady.perWeight.toScientificNotation(3) + " Bq/kg</strong>";
-	if(doseCoefficient) {
-		steadyHTML = steadyHTML + "<br>1日あたり被ばく量: <strong>" + steady.dose.toScientificNotation(3) + " μSv/日</strong>"
+		steadyHTML = steadyHTML + "<br>1日あたり被ばく量: <strong>" + steady.dose.toScientificNotation(3) + " μSv/日</strong>";
 	}
 	document.getElementById("steady").innerHTML = steadyHTML;
 
