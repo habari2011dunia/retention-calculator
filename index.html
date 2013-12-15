@@ -83,9 +83,13 @@ input[type=text] {
 </div><!-- control -->
 
 <div id="result">
-<p>総摂取量は<span id="totalIntake"></span></br>
-<span id="doseLine">預託実効線量は<span id="committedEffectiveDose"></span></br></span>
-定常状態での<span id="steady"></span></p>
+<p>
+<div id="total">
+総摂取量: <span id="totalIntake"></span></br>
+<span id="doseLine">預託実効線量: <span id="committedEffectiveDose"></span></br></span>
+</div>
+<div id="steady"></div>
+</p>
 </div>
 
 </div><!-- sidePanel -->
@@ -433,18 +437,16 @@ function update() {
 	steady.retention = chronic/interval/Math.LN2*steady.retention;
 	steady.perWeight = steady.retention/weight;
 	if (doseCoefficient) {
-		steady.dose = steady.retention/irfArea * doseCoefficient * 1e-6;
+		steady.dose = steady.retention / irfArea * doseCoefficient * 1e+6;
 	}
-	document.getElementById("steady").innerHTML = (function() {
-		switch(selectedValue) {
-			case "perWeight":
-				return "体重あたり残留量は<strong>" + steady.perWeight.toScientificNotation(3) + " Bq/kg</strong>";
-				break;
-			default:
-				return "体内残留量は<strong>" + steady.retention.toScientificNotation(3) + " Bq</strong>";
-				break;
-		}
-	})();
+	// 表示
+	var steadyHTML = "定常状態<br>";
+	steadyHTML = steadyHTML + "体内残留量: <strong>" + steady.retention.toScientificNotation(3) + " Bq</strong>";
+	steadyHTML = steadyHTML + "<br>体重あたり残留量: <strong>" + steady.perWeight.toScientificNotation(3) + " Bq/kg</strong>";
+	if(doseCoefficient) {
+		steadyHTML = steadyHTML + "<br>1日あたり被ばく量: <strong>" + steady.dose.toScientificNotation(3) + " μSv/日</strong>"
+	}
+	document.getElementById("steady").innerHTML = steadyHTML;
 
 	////////////
 	// グラフ //
