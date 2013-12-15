@@ -328,6 +328,15 @@ function update() {
 		}
 		modelParameter.T = [document.getElementById("biologicalHalflife").value];
 	}
+	// 核種
+	var selectNuclide = document.getElementById("selectNuclide");
+	var nuclide = selectNuclide.options[selectNuclide.selectedIndex].value;
+	// 預託実効線量換算係数
+	var doseCoefficient;
+	if("doseCoefficient" in selectedSubject) {
+		doseCoefficient = Number(selectedSubject.doseCoefficient[nuclide]);
+	}
+
 	// 初期摂取
 	var initial = Number(document.getElementById("initial").value);
 	// 慢性摂取
@@ -388,14 +397,11 @@ function update() {
 				}
 				d.value = d.value/weight;
 				break;
-			case "dose": // 1日あたり被ばく量[Sv/日]
-				d.value = initial * irf(d.time); // 初期摂取分
-				for (var j = 0; interval*j < end-start; j++) { // 慢性摂取分
+			case "dose": // 1日あたり被ばく量[uSv/日]
+				d.value = initial * irf(d.time);
+				for (var j = 0; interval*j < end-start; j++) {
 					d.value += chronic * irf(d.time-start-interval*j);
 				}
-				var selectNuclide = document.getElementById("selectNuclide");
-				var nuclide = selectNuclide.options[selectNuclide.selectedIndex].value;
-				var doseCoefficient = Number(selectedSubject.doseCoefficient[nuclide]);
 				d.value = d.value * doseCoefficient * 1e+6 / irfArea;
 				break;
 			case "urine": // 1日あたり尿排出量[Bq/日]
@@ -413,9 +419,6 @@ function update() {
 
 	// 預託実効線量
 	if("doseCoefficient" in selectedSubject) {
-		var selectNuclide = document.getElementById("selectNuclide");
-		var nuclide = selectNuclide.options[selectNuclide.selectedIndex].value;
-		var doseCoefficient = Number(selectedSubject.doseCoefficient[nuclide]);
 		var dose = totalIntake * doseCoefficient * 1e+6;
 		document.getElementById("committedEffectiveDose").innerHTML = "<strong>" + dose.toScientificNotation(2) + " μSv</strong>";
 	}
