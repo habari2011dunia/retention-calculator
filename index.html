@@ -29,8 +29,12 @@
 	stroke: none;
 }
 
-input[type=text] {
+input[type="text"] {
 	width: 3em;
+}
+
+input[type="number"] {
+	width: 5em;
 }
 
 #graph {
@@ -58,26 +62,26 @@ input[type=text] {
 <div id="model">
 モデルを選択: <select id="selectModel"></select><br>
 <span id="subjectLine">対象を選択: <select id="selectSubject"></select></span>
-<span id="halflifeLine">生物学的半減期: <input type="text" value="110" id="biologicalHalflife">日</span>
-体重: <input type="text" value="70" id="weight">kg<br>
-1日の尿量: <input type="text" value="1.6" id="urineVolume">L/日<br>
+<span id="halflifeLine">生物学的半減期: <input type="number" value="110" id="biologicalHalflife" min="1">日</span>
+体重: <input type="number" value="70" id="weight" min="0">kg<br>
+1日の尿量: <input type="number" value="1.6" id="urineVolume" min="0" step="0.1">L/日<br>
 <br>
 核種:
 <select id="selectNuclide">
 	<option value="Cs137">セシウム137</option>
 	<option value="Cs134">セシウム134</option>
 </select><br>
-物理学的半減期: <input type="text" value="30.17" id="physicalHalflife">年<br>
+物理学的半減期: <input type="number" value="30.17" id="physicalHalflife" min="0">年<br>
 </div>
 
 <div id="intake">
-初期摂取: <input type="text" value="0" id="initial">Bq<br>
+初期摂取: <input type="number" value="0" id="initial" min="0">Bq<br>
 慢性摂取: <br>
-&nbsp;&nbsp;<input type="text" value="0" id="start">日目から<input type="text" value="1000" id="end">日目まで<br>
-&nbsp;&nbsp;<input type="text" value="1" id="interval">日ごとに<input type="text" value="1" id="chronic">Bqずつ<br>
+&nbsp;&nbsp;<input type="number" value="0" id="start" min="0">日目から<input type="number" value="1000" id="end" min="0">日目まで<br>
+&nbsp;&nbsp;<input type="number" value="1" id="interval" min="0.1">日ごとに<input type="number" value="1" id="chronic" min="0">Bqずつ<br>
 </div>
 <div id="axis">
-時間軸: <input type="text" value="1000" id="maxTime">日後まで表示<br>
+時間軸: <input type="number" value="1000" id="maxTime" min="1">日後まで表示<br>
 縦軸: <select id="selectValue"></select>を表示
 </div>
 </form>
