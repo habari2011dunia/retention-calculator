@@ -113,6 +113,7 @@ var inputEnd = document.getElementById("end");
 var inputMaxTime = document.getElementById("maxTime");
 var inputPhysicalHalflife = document.getElementById("physicalHalflife");
 var inputBiologicalHalflife = document.getElementById("biologicalHalflife");
+var inputUrineVolume = document.getElementById("urineVolume");
 
 // 選択肢データ
 var models;
@@ -140,6 +141,7 @@ inputEnd.onchange = update;
 inputMaxTime.onchange = update;
 inputPhysicalHalflife.onchange = update;
 inputBiologicalHalflife.onchange = update;
+inputUrineVolume.onchange = update;
 
 initD3();
 
@@ -278,7 +280,7 @@ function onChangeModel() { // モデル変更時
 	}
 	selectValue.add(new Option("体内残留量[Bq]", "wholeBody"));
 	selectValue.add(new Option("体重あたり残留量[Bq/kg]", "perWeight"));
-	selectValue.add(new Option("1日あたり尿排出量[Bq/日]", "urine"));
+	selectValue.add(new Option("1日あたり尿中排出量[Bq/日]", "urine"));
 	selectValue.add(new Option("尿中濃度[Bq/L]", "urineDensity"));
 
 	if(selectedModel.name == "ICRP56") {
@@ -304,7 +306,7 @@ function onChangeSubject() { // 対象変更時
 	// 体重フォームの値を書き直す
 	inputWeight.value = selectedSubject.weight;
 	// 尿フォームの値を書き直す
-	document.getElementById("urineVolume").value = selectedSubject.urine;
+	inputUrineVolume.value = selectedSubject.urine;
 
 	update();
 }
@@ -338,7 +340,7 @@ function update() {
 	// 体重
 	var weight = Number(inputWeight.value);
 	// 尿量
-	var urineVolume = Number(document.getElementById("urineVolume").value);
+	var urineVolume = Number(inputUrineVolume.value);
 	// モデルのパラメータ
 	var modelParameter = selectedSubject.parameter;
 	if (selectedModel.name == "halflife") { // 半減期モデルなら生物学的半減期を取得
@@ -421,7 +423,7 @@ function update() {
 				}
 				d.value = d.value * doseCoefficient * 1e+6 / irfArea * 365.24;
 				break;
-			case "urine": // 1日あたり尿排出量[Bq/日]
+			case "urine": // 1日あたり尿中排出量[Bq/日]
 				d.value = initial * ief(d.time) * urineRatio;
 				for (var j = 0; interval*j < end-start; j++) {
 					d.value += chronic * ief(d.time-start-interval*j) * urineRatio;
@@ -505,7 +507,7 @@ function update() {
 					return "体重あたり残留量[Bq/kg]";
 					break;
 				case "urine":
-					return "1日あたり尿排出量[Bq/日]";
+					return "1日あたり尿中排出量[Bq/日]";
 					break;
 				case "urineDensity":
 					return "尿中濃度[Bq/L]";
@@ -533,6 +535,7 @@ function update() {
 		.delay(1000)
 		.duration(1000)
 		.attr("d", line);
+
 }
 
 
