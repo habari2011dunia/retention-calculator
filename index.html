@@ -57,8 +57,6 @@ input[type="number"] {
 <div id="sidePanel">
 <div id="control">
 <form>
-<input type="button" value="更新" id="update"><br>
-
 <div id="model">
 モデルを選択: <select id="selectModel"></select><br>
 <span id="subjectLine">対象を選択: <select id="selectSubject"></select></span>
@@ -95,32 +93,174 @@ input[type="number"] {
 </div><!-- sidePanel -->
 <script>
 (function() {
-// モデル,対象,表示値選択のselect要素, 体重入力のinput要素
-var selectModel = document.getElementById("selectModel");
-var selectSubject = document.getElementById("selectSubject");
-var selectValue = document.getElementById("selectValue");
-var inputWeight = document.getElementById("weight");
 
 // 科学的表記のメソッドを追加
 Number.prototype.toScientificNotation = function(x) {
 	return this.toPrecision(x).replace("e", "&times;10<sup>").replace("+", "") + "</sup>";
-}
+};
 
-d3.json("models.json", function(error, models) { // モデルデータのロード
+// input要素
+var selectModel = document.getElementById("selectModel");
+var selectSubject = document.getElementById("selectSubject");
+var selectValue = document.getElementById("selectValue");
+var inputWeight = document.getElementById("weight");
+var selectNuclide = document.getElementById("selectNuclide");
+var inputInitial = document.getElementById("initial");
+var inputInterval = document.getElementById("interval");
+var inputChronic = document.getElementById("chronic");
+var inputStart = document.getElementById("start");
+var inputEnd = document.getElementById("end");
+var inputMaxTime = document.getElementById("maxTime");
+var inputPhysicalHalflife = document.getElementById("physicalHalflife");
+var inputBiologicalHalflife = document.getElementById("biologicalHalflife");
 
-// モデル選択メニューの作成
+// 選択肢データ
+var models;
+var nuclides = [
+	{name: "137cs", halflife: 30.17, jp: "セシウム137"},
+	{name: "137cs", halflife: 2.0652, jp: "セシウム134"}
+];
+
+// D3.js
+var w = 640, h = 500; // 表示領域のサイズと余白
+var margin = {top: 10, left: 50, bottom: 40, right:50};
+var svg, xScale, yScale, xAxis, yAxis, xGrid, yGrid, line;
+
+// 計算用
+var stepsNumber = 100; // 時間ステップ数
+var data = []; // 計算データ
+
+selectValue.onchange = update;
+inputWeight.onchange = update;
+inputInitial.onchange = update;
+inputInterval.onchange = update;
+inputChronic.onchange = update;
+inputStart.onchange = update;
+inputEnd.onchange = update;
+inputMaxTime.onchange = update;
+inputPhysicalHalflife.onchange = update;
+inputBiologicalHalflife.onchange = update;
+
+initD3();
+
+d3.json("models.json", function(error, json) { // モデルデータのロード
+
+models = json;
+
+// モデル選択肢の追加
 models.forEach(function(m) {
 	selectModel.add(new Option(m.label));
 });
 
-// モデル変更時
-selectModel.onchange = changeModel;
-function changeModel() {
+selectModel.onchange = onChangeModel;
+selectSubject.onchange = onChangeSubject;
+
+// 時間
+var maxTime = 1000, timeStep = maxTime/stepsNumber;
+
+// 仮データ
+for(var i=0; i<stepsNumber; i++) {
+	data.push({time: i*timeStep, value: 0});
+}
+
+// 核種選択
+selectNuclide.onchange = function() {
+	var i = selectNuclide.selectedIndex;
+	inputPhysicalHalflife.value = nuclides[i].halflife;
+	update();
+};
+
+onChangeModel();
+
+}); // end of d3.json callback function
+
+function initD3() {
+
+	// svg要素
+	svg = d3.select("svg")
+		.attr({width: w, height: h});
+
+	// スケール
+	xScale = d3.scale.linear()
+		.domain([0, 1000])
+		.range([margin.left, w-margin.right]);
+	yScale = d3.scale.linear()
+		.domain([0, 100])
+		.range([h-margin.bottom, margin.top]);
+
+	// 軸生成関数
+	xAxis = d3.svg.axis()
+		.scale(xScale)
+		.orient("bottom");
+	yAxis = d3.svg.axis()
+		.scale(yScale)
+		.orient("left");
+
+	// グリッド生成関数
+	xGrid = d3.svg.axis()
+		.scale(xScale)
+		.orient("bottom")
+		.tickSize(-h+margin.top+margin.bottom, 0, 0)
+		.tickFormat("");
+	yGrid = d3.svg.axis()
+		.scale(yScale)
+		.orient("left")
+		.tickSize(-w+margin.left+margin.right, 0, 0)
+		.tickFormat("");
+
+	// 折れ線path要素のd属性を計算する関数
+	line = d3.svg.line()
+		.x(function(d) { return xScale(d.time); })
+		.y(function(d) { return yScale(d.value); });
+
+	// グリッド線となるg要素をsvg要素の子要素として追加
+	svg.append("g")
+		.attr("class", "x grid")
+		.attr("transform", "translate(0,"+(h-margin.bottom)+")")
+		.call(xGrid);
+	svg.append("g")
+		.attr("class", "y grid")
+		.attr("transform", "translate("+ margin.left + ",0)")
+		.call(yGrid);
+
+	// x軸となるg要素をsvg要素の子要素として追加
+	svg.append("g")
+		.attr("class", "x axis")
+		.attr("transform", "translate(0,"+(h-margin.bottom)+")")
+		.call(xAxis)
+		.append("text") // ラベル
+		.text("経過時間[日]")
+		.attr("font-size", 10)
+		.attr("dx", (w-margin.right)/2)
+		.attr("dy", "3.8em");
+
+	// y軸となるg要素をsvg要素の子要素として追加
+	svg.append("g")
+		.attr("class", "y axis")
+		.attr("transform", "translate("+margin.left+",0)")
+		.call(yAxis)
+		.append("text") // ラベル
+		.attr("class", "y label")
+		.text("体内残留量[Bq]")
+		.attr("font-size", 10)
+		.attr("transform", "rotate(-90)")
+		.attr("dy", "-3.8em")
+		.attr("dx", -(h+margin.top-margin.bottom)/2)
+		.attr("text-anchor", "middle");
+
+	// 折れ線となるpath要素をsvg要素の子要素として追加
+	svg.append("path")
+		.datum(data) // d属性はupdate()関数内で指定する
+		.attr("class", "line");
+
+}
+
+function onChangeModel() { // モデル変更時
 	document.getElementById("subjectLine").style.display = "inline";
 	document.getElementById("halflifeLine").style.display = "none";
 
 	// 選択されたモデルの取得
-	var i = document.getElementById("selectModel").selectedIndex;
+	var i = selectModel.selectedIndex;
 	var selectedModel = models[i];
 
 	// 対象選択メニューの更新
@@ -150,170 +290,43 @@ function changeModel() {
 		document.getElementById("subjectLine").style.display = "none";
 		document.getElementById("halflifeLine").style.display = "inline";
 	}
-	changeSubject();
+
+	onChangeSubject();
 }
 
-// 対象変更時
-selectSubject.onchange = changeSubject;
-function changeSubject() {
+function onChangeSubject() { // 対象変更時
 	// 選択されたモデルを取得
-	var modelIndex = document.getElementById("selectModel").selectedIndex;
+	var modelIndex = selectModel.selectedIndex;
 	var selectedModel = models[modelIndex];
 	// 選択された対象を取得
-	var subjectIndex = document.getElementById("selectSubject").selectedIndex;
+	var subjectIndex = selectSubject.selectedIndex;
 	var selectedSubject = selectedModel.subject[subjectIndex];
 	// 体重フォームの値を書き直す
 	inputWeight.value = selectedSubject.weight;
 	// 尿フォームの値を書き直す
 	document.getElementById("urineVolume").value = selectedSubject.urine;
-}
 
-// 初期化
-changeModel();
-
-// 核種選択
-var nuclides = [
-	{name: "137cs", halflife: 30.17, jp: "セシウム137"},
-	{name: "137cs", halflife: 2.0652, jp: "セシウム134"}
-];
-document.getElementById("selectNuclide").onchange = function() {
-	var i = document.getElementById("selectNuclide").selectedIndex;
-	document.getElementById("physicalHalflife").value = nuclides[i].halflife;
-};
-
-// 時間
-var maxTime = 1000, stepsNumber = 1000,
-	timeStep = maxTime/stepsNumber;
-
-// データ初期化
-var data = [];
-for(var i=0; i<stepsNumber; i++) {
-	data.push({time: i*timeStep, value: 0});
-}
-
-// 表示領域のサイズと余白
-var w = 640, h = 500; 
-var margin = {top: 10, left: 50, bottom: 40, right:50};
-
-// svg要素
-var svg = d3.select("svg")
-	.attr({width: w, height: h});
-
-// データ範囲から表示範囲に変換する関数
-var xScale = d3.scale.linear()
-	.domain([0, maxTime])
-	.range([margin.left, w-margin.right])
-	.nice();
-var yScale = d3.scale.linear()
-	.domain([0, d3.max(data, function(d) { return d.value; } )])
-	.range([h-margin.bottom, margin.top])
-	.nice();
-
-// 軸となるg要素を作る関数
-var xAxis = d3.svg.axis()
-	.scale(xScale)
-	.orient("bottom");
-var yAxis = d3.svg.axis()
-	.scale(yScale)
-	.orient("left");
-
-// グリッドを作る関数
-var xGrid = d3.svg.axis()
-	.scale(xScale)
-	.orient("bottom")
-	.tickSize(-h+margin.top+margin.bottom, 0, 0)
-	.tickFormat("");
-var yGrid = d3.svg.axis()
-	.scale(yScale)
-	.orient("left")
-	.tickSize(-w+margin.left+margin.right, 0, 0)
-	.tickFormat("");
-
-// 折れ線となるpath要素のd属性を計算する関数
-var line = d3.svg.line()
-	.x(function(d) { return xScale(d.time); })
-	.y(function(d) { return yScale(d.value); });
-
-// グリッド線となるg要素をsvg要素の子要素として追加
-svg.append("g")
-	.attr("class", "x grid")
-	.attr("transform", "translate(0,"+(h-margin.bottom)+")")
-	.call(xGrid);
-svg.append("g")
-	.attr("class", "y grid")
-	.attr("transform", "translate("+ margin.left + ",0)")
-	.call(yGrid);
-
-// x軸となるg要素をsvg要素の子要素として追加
-svg.append("g")
-	.attr("class", "x axis")
-	.attr("transform", "translate(0,"+(h-margin.bottom)+")")
-	.call(xAxis)
-	.append("text") // ラベル
-	.text("経過時間[日]")
-	.attr("font-size", 10)
-	.attr("dx", (w-margin.right)/2)
-	.attr("dy", "3.8em");
-
-// y軸となるg要素をsvg要素の子要素として追加
-svg.append("g")
-	.attr("class", "y axis")
-	.attr("transform", "translate("+margin.left+",0)")
-	.call(yAxis)
-	.append("text") // ラベル
-	.attr("class", "y label")
-	.text("体内残留量[Bq]")
-	.attr("font-size", 10)
-	.attr("transform", "rotate(-90)")
-	.attr("dy", "-3.8em")
-	.attr("dx", -(h+margin.top-margin.bottom)/2)
-	.attr("text-anchor", "middle");
-
-// 折れ線となるpath要素をsvg要素の子要素として追加
-svg.append("path")
-	.datum(data) // d属性はupdate()関数内で指定する
-	.attr("class", "line");
-
-update();
-
-// 更新ボタン
-d3.select("#update").on("click", function() {
 	update();
-});
+}
 
-// 更新
 function update() {
 	////////////////
 	// 入力データ //
 	////////////////
 
 	// 不適当な値を強制変換
-	if (document.getElementById("initial").value < 0) {
-		document.getElementById("initial").value = 0;
-	}
-	if (document.getElementById("interval").value < 0.1) {
-		document.getElementById("interval").value = 0.1;
-	}
-	if (document.getElementById("chronic").value < 0) {
-		document.getElementById("chronic").value = 0;
-	}
-	if (document.getElementById("maxTime").value <= 0) {
-		document.getElementById("maxTime").value = 0;
-	}
-	if (document.getElementById("start").value < 0) {
-		document.getElementById("start").value = 0;
-	}
-	if (document.getElementById("weight").value <= 0) {
-		document.getElementById("weight").value = 1;
-	}
-	if (Number(document.getElementById("end").value) < Number(document.getElementById("start").value)) {
-		document.getElementById("end").value = document.getElementById("start").value;
-	}
+	if (inputInitial.value < 0) { inputInitial.value = 0; }
+	if (inputInterval.value < 0.1) { inputInterval.value = 0.1; }
+	if (inputChronic.value < 0) { inputChronic.value = 0; }
+	if (inputMaxTime.value <= 0) { inputMaxTime.value = 0; }
+	if (inputStart.value < 0) { inputStart.value = 0; }
+	if (inputWeight.value <= 0) { inputWeight.value = 1; }
+	if (Number(inputEnd.value) < Number(inputStart.value)) { inputEnd.value = inputStart.value; }
 
 	// 物理学的半減期
-	var Tp = document.getElementById("physicalHalflife").value * 365.24;
+	var Tp = inputPhysicalHalflife.value * 365.24;
 	if (Tp <= 0) { // 0以下なら1年に強制変換
-		document.getElementById("physicalHalflife").value = 1;
+		inputPhysicalHalflife.value = 1;
 		Tp = 365.24;
 	}
 	// モデル
@@ -329,13 +342,12 @@ function update() {
 	// モデルのパラメータ
 	var modelParameter = selectedSubject.parameter;
 	if (selectedModel.name == "halflife") { // 半減期モデルなら生物学的半減期を取得
-		if (document.getElementById("biologicalHalflife").value <= 0) { // 0以下なら1日に強制変換
-			document.getElementById("biologicalHalflife").value = 1;
+		if (inputBiologicalHalflife.value <= 0) { // 0以下なら1日に強制変換
+			inputBiologicalHalflife.value = 1;
 		}
-		modelParameter.T = [document.getElementById("biologicalHalflife").value];
+		modelParameter.T = [inputBiologicalHalflife.value];
 	}
 	// 核種
-	var selectNuclide = document.getElementById("selectNuclide");
 	var nuclide = selectNuclide.options[selectNuclide.selectedIndex].value;
 	// 預託実効線量換算係数
 	var doseCoefficient = null;
@@ -344,16 +356,15 @@ function update() {
 	}
 
 	// 初期摂取
-	var initial = Number(document.getElementById("initial").value);
+	var initial = Number(inputInitial.value);
 	// 慢性摂取
-	var interval = Number(document.getElementById("interval").value);
-	var chronic = Number(document.getElementById("chronic").value);
-	var start = Number(document.getElementById("start").value);
-	var end = Number(document.getElementById("end").value);
+	var interval = Number(inputInterval.value);
+	var chronic = Number(inputChronic.value);
+	var start = Number(inputStart.value);
+	var end = Number(inputEnd.value);
 	// 最大時間
-	maxTime = Number(document.getElementById("maxTime").value);
+	maxTime = Number(inputMaxTime.value);
 	// 計算する値
-	var selectValue = document.getElementById("selectValue");
 	var selectedValue = selectValue.options[selectValue.selectedIndex].value;
 
 	//////////
@@ -524,7 +535,7 @@ function update() {
 		.attr("d", line);
 }
 
-}); // end of d3.json callback function
+
 })();
 </script>
 </body>
