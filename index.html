@@ -514,7 +514,8 @@ function update() {
 					break;
 				case "dose": // 1年あたり被ばく量[uSv/年]
 					var v = d3.sum( compartments );
-					v = v * doseCoefficient * 1e+6 / irfArea() * YEAR;
+					v *= doseCoefficient * 1e+6 / irfArea() * YEAR;
+					data.push( { time: t, value: v } );
 					break;
 				case "urine": // 1日あたり尿中排出量[Bq/日]
 					var v = 0;
