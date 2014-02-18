@@ -76,7 +76,7 @@ input[type="number"] {
 初期摂取: <input type="number" value="0" id="initial" min="0">Bq<br>
 慢性摂取: <br>
 &nbsp;&nbsp;<input type="number" value="0" id="start" min="0">日目から<input type="number" value="1000" id="end" min="0">日目まで<br>
-&nbsp;&nbsp;<input type="number" value="1" id="interval" min="0.1">日ごとに<input type="number" value="1" id="chronic" min="0">Bqずつ<br>
+&nbsp;&nbsp;<input type="number" value="1" id="interval" min="0">日ごとに<input type="number" value="1" id="chronic" min="0">Bqずつ<br>
 </div>
 <div id="axis">
 時間軸: <input type="number" value="1000" id="maxTime" min="1">日後まで表示<br>
@@ -123,12 +123,15 @@ var nuclides = [
 ];
 
 // D3.js
-var w = 640, h = 500; // 表示領域のサイズと余白
-var margin = {top: 10, left: 50, bottom: 40, right:50};
+var w = 640, h = 500;
+var margin = { top: 10, left: 50, bottom: 40, right:50 };
 var svg, xScale, yScale, xAxis, yAxis, xGrid, yGrid, line;
 
 // 計算用
+var YEAR = 365.24;
+var urineRatio = 0.8; // 尿による排出の割合を80%と仮定
 var stepsNumber = 100; // 時間ステップ数
+var maxTime = 1000, timeStep = maxTime / stepsNumber;
 var data = []; // 計算データ
 
 selectValue.onchange = update;
@@ -147,32 +150,23 @@ initD3();
 
 d3.json("models.json", function(error, json) { // モデルデータのロード
 
-models = json;
+	models = json;
 
-// モデル選択肢の追加
-models.forEach(function(m) {
-	selectModel.add(new Option(m.label));
-});
+	models.forEach(function(m) {
+		selectModel.add(new Option(m.label)); // モデル選択肢の追加
+	});
 
-selectModel.onchange = onChangeModel;
-selectSubject.onchange = onChangeSubject;
+	selectModel.onchange = onChangeModel;
+	selectSubject.onchange = onChangeSubject;
 
-// 時間
-var maxTime = 1000, timeStep = maxTime/stepsNumber;
+	// 核種選択
+	selectNuclide.onchange = function() {
+		var i = selectNuclide.selectedIndex;
+		inputPhysicalHalflife.value = nuclides[i].halflife;
+		update();
+	};
 
-// 仮データ
-for(var i=0; i<stepsNumber; i++) {
-	data.push({time: i*timeStep, value: 0});
-}
-
-// 核種選択
-selectNuclide.onchange = function() {
-	var i = selectNuclide.selectedIndex;
-	inputPhysicalHalflife.value = nuclides[i].halflife;
-	update();
-};
-
-onChangeModel();
+	onChangeModel();
 
 }); // end of d3.json callback function
 
@@ -215,7 +209,7 @@ function initD3() {
 		.x(function(d) { return xScale(d.time); })
 		.y(function(d) { return yScale(d.value); });
 
-	// グリッド線となるg要素をsvg要素の子要素として追加
+	// グリッド線
 	svg.append("g")
 		.attr("class", "x grid")
 		.attr("transform", "translate(0,"+(h-margin.bottom)+")")
@@ -225,7 +219,7 @@ function initD3() {
 		.attr("transform", "translate("+ margin.left + ",0)")
 		.call(yGrid);
 
-	// x軸となるg要素をsvg要素の子要素として追加
+	// x軸
 	svg.append("g")
 		.attr("class", "x axis")
 		.attr("transform", "translate(0,"+(h-margin.bottom)+")")
@@ -236,7 +230,7 @@ function initD3() {
 		.attr("dx", (w-margin.right)/2)
 		.attr("dy", "3.8em");
 
-	// y軸となるg要素をsvg要素の子要素として追加
+	// y軸
 	svg.append("g")
 		.attr("class", "y axis")
 		.attr("transform", "translate("+margin.left+",0)")
@@ -250,15 +244,16 @@ function initD3() {
 		.attr("dx", -(h+margin.top-margin.bottom)/2)
 		.attr("text-anchor", "middle");
 
-	// 折れ線となるpath要素をsvg要素の子要素として追加
+	// 折れ線
 	svg.append("path")
-		.datum(data) // d属性はupdate()関数内で指定する
+		.datum(data)
 		.attr("class", "line");
 
 }
 
 function onChangeModel() { // モデル変更時
-	document.getElementById("subjectLine").style.display = "inline";
+
+	document.getElementById("subjectLine").style.display = "inline"; 
 	document.getElementById("halflifeLine").style.display = "none";
 
 	// 選択されたモデルの取得
@@ -266,81 +261,111 @@ function onChangeModel() { // モデル変更時
 	var selectedModel = models[i];
 
 	// 対象選択メニューの更新
-	while(selectSubject.options.length) { // 一旦すべての選択肢を消去
-		selectSubject.remove(0);
+	while( selectSubject.options.length ) {
+		selectSubject.remove(0); // 一旦すべての選択肢を消去
 	}
+
 	selectedModel.subject.forEach(function(s) {
-		selectSubject.add(new Option(s.label));
+		selectSubject.add( new Option(s.label) ); // 選択肢を追加
 	});
+
 	selectSubject.selectedIndex = selectedModel.selectedIndex; 	// 既定の選択
 
 	// 表示量選択メニューの更新
-	while(selectValue.options.length) { // 一旦すべての選択肢を消去
-		selectValue.remove(0);
-	}
-	selectValue.add(new Option("体内残留量[Bq]", "wholeBody"));
-	selectValue.add(new Option("体重あたり残留量[Bq/kg]", "perWeight"));
-	selectValue.add(new Option("1日あたり尿中排出量[Bq/日]", "urine"));
-	selectValue.add(new Option("尿中濃度[Bq/L]", "urineDensity"));
-
-	if(selectedModel.name == "ICRP56") {
-		selectValue.add(new Option("1年あたり被ばく量[μSv/年]", "dose")); // 被ばく量表示の選択肢追加
+	while( selectValue.options.length ) {
+		selectValue.remove(0); // 一旦すべての選択肢を消去
 	}
 
-	// 手入力モード
-	if(selectedModel.name ==  "halflife") {
-		document.getElementById("subjectLine").style.display = "none";
-		document.getElementById("halflifeLine").style.display = "inline";
+	// 共通の選択肢
+	selectValue.add( new Option( "体内残留量[Bq]", "wholeBody" ) );
+	selectValue.add( new Option( "体重あたり残留量[Bq/kg]", "perWeight") );
+	selectValue.add( new Option( "1日あたり尿中排出量[Bq/日]", "urine") );
+	selectValue.add( new Option( "尿中濃度[Bq/L]", "urineDensity") );
+
+	// ICRP publ. 56モデルのとき
+	if( selectedModel.name == "ICRP56" ) {
+		selectValue.add(new Option("1年あたり被ばく量[μSv/年]", "dose"));
+	}
+
+	// 生物学的半減期手入力モードのとき
+	if( selectedModel.name ==  "halflife" ) {
+		document.getElementById("subjectLine").style.display = "none"; // 対象選択を非表示
+		document.getElementById("halflifeLine").style.display = "inline"; // 半減期入力欄を表示
 	}
 
 	onChangeSubject();
+
 }
 
 function onChangeSubject() { // 対象変更時
+
 	// 選択されたモデルを取得
 	var modelIndex = selectModel.selectedIndex;
 	var selectedModel = models[modelIndex];
+
 	// 選択された対象を取得
 	var subjectIndex = selectSubject.selectedIndex;
 	var selectedSubject = selectedModel.subject[subjectIndex];
+
 	// 体重フォームの値を書き直す
 	inputWeight.value = selectedSubject.weight;
+
 	// 尿フォームの値を書き直す
 	inputUrineVolume.value = selectedSubject.urine;
 
 	update();
+
 }
 
 function update() {
+
 	////////////////
 	// 入力データ //
 	////////////////
 
 	// 不適当な値を強制変換
-	if (inputInitial.value < 0) { inputInitial.value = 0; }
-	if (inputInterval.value < 0.1) { inputInterval.value = 0.1; }
-	if (inputChronic.value < 0) { inputChronic.value = 0; }
-	if (inputMaxTime.value <= 0) { inputMaxTime.value = 0; }
-	if (inputStart.value < 0) { inputStart.value = 0; }
-	if (inputWeight.value <= 0) { inputWeight.value = 1; }
-	if (Number(inputEnd.value) < Number(inputStart.value)) { inputEnd.value = inputStart.value; }
+	if ( Number( inputInitial.value ) < 0) {
+		inputInitial.value = 0;
+	}
+	if ( Number( inputInterval.value ) < 0.1 ) {
+		inputInterval.value = 0.1;
+	}
+	if ( Number( inputChronic.value ) < 0) {
+		inputChronic.value = 0;
+	}
+	if ( Number( inputMaxTime.value ) < 0 ) {
+		inputMaxTime.value = 0;
+	}
+	if ( Number( inputStart.value ) < 0 ) {
+		inputStart.value = 0;
+	}
+	if ( Number( inputWeight.value ) <= 0 ) {
+		inputWeight.value = 1;
+	}
+	if ( Number( inputEnd.value ) < Number( inputStart.value ) ) {
+		inputEnd.value = inputStart.value;
+	}
+	if ( Number( inputPhysicalHalflife.value ) <= 0) {
+		inputPhysicalHalflife.value = 1;
+	}
 
 	// 物理学的半減期
-	var Tp = inputPhysicalHalflife.value * 365.24;
-	if (Tp <= 0) { // 0以下なら1年に強制変換
-		inputPhysicalHalflife.value = 1;
-		Tp = 365.24;
-	}
+	var Tp = Number( inputPhysicalHalflife.value ) * YEAR; // 年->日
+
 	// モデル
 	var modelIndex = selectModel.selectedIndex;
 	var selectedModel = models[modelIndex];
+
 	// 対象
 	var subjectIndex = selectSubject.selectedIndex;
 	var selectedSubject = selectedModel.subject[subjectIndex];
+
 	// 体重
-	var weight = Number(inputWeight.value);
-	// 尿量
-	var urineVolume = Number(inputUrineVolume.value);
+	var weight = Number( inputWeight.value );
+
+	// 1日の尿量
+	var urineVolume = Number( inputUrineVolume.value );
+
 	// モデルのパラメータ
 	var modelParameter = selectedSubject.parameter;
 	if (selectedModel.name == "halflife") { // 半減期モデルなら生物学的半減期を取得
@@ -349,122 +374,205 @@ function update() {
 		}
 		modelParameter.T = [inputBiologicalHalflife.value];
 	}
+
 	// 核種
 	var nuclide = selectNuclide.options[selectNuclide.selectedIndex].value;
+
 	// 預託実効線量換算係数
 	var doseCoefficient = null;
 	if("doseCoefficient" in selectedSubject) {
-		doseCoefficient = Number(selectedSubject.doseCoefficient[nuclide]);
+		doseCoefficient = Number( selectedSubject.doseCoefficient[ nuclide ] );
 	}
 
 	// 初期摂取
-	var initial = Number(inputInitial.value);
+	var initial = Number( inputInitial.value );
 	// 慢性摂取
-	var interval = Number(inputInterval.value);
-	var chronic = Number(inputChronic.value);
-	var start = Number(inputStart.value);
-	var end = Number(inputEnd.value);
-	// 最大時間
-	maxTime = Number(inputMaxTime.value);
-	// 計算する値
+	var interval = Number( inputInterval.value ); // 摂取間隔
+	var chronic = Number( inputChronic.value ); // 1回あたり摂取量
+	var start = Number( inputStart.value ); // 摂取開始時刻
+	var end = Number( inputEnd.value ); // 摂取終了時刻
+
+	// 最大表示時間
+	maxTime = Number( inputMaxTime.value );
+
+	// 計算する量
 	var selectedValue = selectValue.options[selectValue.selectedIndex].value;
 
 	//////////
 	// 計算 //
 	//////////
 
-	// IRF(Intake Retention Fraction): t=0に単位量急性摂取のときの解, つまりグリーン関数のこと
-	function irf(t) {
-		var value = [];
-		modelParameter.forEach(function(p) {
-			value.push(t >= 0 ? p.a*Math.pow(0.5, t/p.T) : 0);
-		});
-		return d3.sum(value)*Math.pow(0.5, t/Tp);
-	}
-	// IRFの積分[日]
-	var irfArea = 0;
-	modelParameter.forEach(function(p) {
-		irfArea += p.a*p.T/Math.LN2;
-	});
+	// 経時変化計算開始 //
 
-	// IEF(Intake Excretion Fraction): t=0に単位量急性摂取のときの排出率[1/日]
-	function ief(t) {
-		var value = [];
-		modelParameter.forEach(function(p) {
-			value.push(t >= 0 ? p.a/p.T*Math.pow(0.5, t/p.T) : 0);
-		});
-		return d3.sum(value)*Math.LN2*Math.pow(0.5, t/Tp);
-	}
-	// 尿による排出の割合を80%と仮定
-	var urineRatio = 0.8;
-
-	// データ再計算
+	data = [];
 	timeStep = maxTime/stepsNumber;
-	data.forEach(function(d, i) {
-		d.time = i * timeStep; // 時間
-		switch(selectedValue) {
-			case "wholeBody": // 体内残留量[Bq]
-				d.value = initial * irf(d.time); // 初期摂取分
-				for (var j = 0; interval*j < end-start; j++) { // 慢性摂取分
-					d.value += chronic * irf(d.time-start-interval*j);
-				}
-				break;
-			case "perWeight": // 体重あたり残留量[Bq/kg]
-				d.value = initial * irf(d.time);
-				for (var j = 0; interval*j < end-start; j++) {
-					d.value += chronic * irf(d.time-start-interval*j);
-				}
-				d.value = d.value/weight;
-				break;
-			case "dose": // 1年あたり被ばく量[uSv/年]
-				d.value = initial * irf(d.time);
-				for (var j = 0; interval*j < end-start; j++) {
-					d.value += chronic * irf(d.time-start-interval*j);
-				}
-				d.value = d.value * doseCoefficient * 1e+6 / irfArea * 365.24;
-				break;
-			case "urine": // 1日あたり尿中排出量[Bq/日]
-				d.value = initial * ief(d.time) * urineRatio;
-				for (var j = 0; interval*j < end-start; j++) {
-					d.value += chronic * ief(d.time-start-interval*j) * urineRatio;
-				}
-				break;
-			case "urineDensity": // 尿中濃度[Bq/L]
-				d.value = initial * ief(d.time) * urineRatio;
-				for (var j = 0; interval*j < end-start; j++) {
-					d.value += chronic * ief(d.time-start-interval*j) * urineRatio / urineVolume;
-				}
-				break;
-		}
-	});
 
-	// 総量
-	var total = {intake: 0, dose: 0};
+	if ( timeStep >= interval ) { // 連続摂取近似
+
+		for( var i = 0; timeStep * i <= maxTime; i ++ ) { // 時間を等間隔に分ける
+
+			var t = timeStep * i; // 時刻
+
+			switch( selectedValue ) {
+				case "wholeBody": // 体内残留量[Bq]
+					var v = initial * irf(t);
+					v += chronic / interval * irfContinuous( t, start, end );
+					data.push( { time: t, value: v } );
+					break;
+				case "perWeight": // 体重あたり残留量[Bq/kg]
+					var v = initial * irf(t);
+					v += chronic / interval * irfContinuous( t, start, end );
+					v /= weight;
+					data.push( { time: t, value: v } );
+					break;
+				case "dose": // 1年あたり被ばく量[uSv/年]
+					var v = initial * irf(t);
+					v += chronic / interval * irfContinuous( t, start, end );
+					v = v * doseCoefficient * 1e+6 / irfArea() * YEAR;
+					break;
+				case "urine": // 1日あたり尿中排出量[Bq/日]
+					var v = initial * ief(t);
+					v += chronic / interval * iefContinuous( t, start, end );
+					v *= urineRatio;
+					data.push( { time: t, value: v } );
+					break;
+				case "urineDensity": // 尿中濃度[Bq/L]
+					var v = initial * ief(t);
+					v += chronic / interval * iefContinuous( t, start, end );
+					v *= urineRatio / urineVolume;
+					data.push( { time: t, value: v } );
+					break;
+			}
+
+		}
+
+	} else if ( timeStep < interval ) { // 逐次計算
+
+		intakeTime = []; // 摂取時刻
+		for ( var i = 0; i * interval <= end - start; i ++ ) {
+			intakeTime.push( start + i * interval );
+		}
+
+		// 初期値
+		var t = 0;
+		var compartments = [];
+		modelParameter.forEach(function(p) {
+			compartments.push( p.a * initial ); // 初期急性摂取
+		});
+		addData();
+
+		for ( var i = 0; i < intakeTime.length; i++ ) {
+
+			var nextIntakeTime = intakeTime[i];
+
+			if ( nextIntakeTime >= maxTime ) break;
+
+			// 次の摂取の前まで
+			while ( t < nextIntakeTime - timeStep ) {
+				t += timeStep;
+				for ( var j = 0; j < compartments.length; j++ ) {
+					compartments[j] *= Math.pow( 0.5, timeStep / modelParameter[j].T );
+				}
+				addData();
+			}
+
+			// 次の摂取直前
+			for ( var j = 0; j < compartments.length; j++ ) {
+				compartments[j] *= Math.pow( 0.5, (nextIntakeTime - t) / modelParameter[j].T );
+			}
+			t = nextIntakeTime;
+			addData();
+
+			// 摂取直後
+			for ( var j = 0; j < compartments.length; j++ ) {
+				compartments[j] += chronic * modelParameter[j].a;
+			}
+			addData();
+
+		}
+
+		// 摂取終了後から最大表示時刻まで
+		while ( t <= maxTime ) {
+			t += timeStep;
+			for ( var j = 0; j < compartments.length; j++ ) {
+				compartments[j] *= Math.pow( 0.5, timeStep / modelParameter[j].T );
+			}
+			addData();
+		}
+
+		function addData() {
+
+			switch( selectedValue ) {
+				case "wholeBody": // 体内残留量[Bq]
+					var v = d3.sum( compartments );
+					data.push( { time: t, value: v } );
+					break;
+				case "perWeight": // 体重あたり残留量[Bq/kg]
+					var v = d3.sum( compartments );
+					v /= weight;
+					data.push( { time: t, value: v } );
+					break;
+				case "dose": // 1年あたり被ばく量[uSv/年]
+					var v = d3.sum( compartments );
+					v = v * doseCoefficient * 1e+6 / irfArea() * YEAR;
+					break;
+				case "urine": // 1日あたり尿中排出量[Bq/日]
+					var v = 0;
+					for( var j = 0; j < compartments.length; j++ ) {
+						v += compartments[j] / modelParameter[j].T
+					}
+					v *= Math.LN2 * urineRatio;
+					data.push( { time: t, value: v } );
+					break;
+				case "urineDensity": // 尿中濃度[Bq/L]
+					var v = 0;
+					for( var j = 0; j < compartments.length; j++ ) {
+						v += compartments[j] / modelParameter[j].T
+					}
+					v *= Math.LN2 * urineRatio / urineVolume;
+					data.push( { time: t, value: v } );
+					break;
+			}
+
+		} // end of addData() //
+
+	} // 経時変化計算終了 //
+
+	// 総計
 	var totalHTML = "<strong>総計</strong>";
-	total.intake = initial + chronic*(end - start)/interval;
-	totalHTML = totalHTML + "<br>&nbsp;&nbsp;総摂取量: <strong>" + total.intake.toScientificNotation(3) + " Bq</strong>";
-	if(doseCoefficient) {
+	var total = {intake: 0, dose: 0};
+
+	total.intake = initial + chronic * (end - start) / interval;
+	totalHTML += "<br>&nbsp;&nbsp;総摂取量: <strong>" + total.intake.toScientificNotation(3) + " Bq</strong>";
+
+	if(doseCoefficient) { // 線量係数があるとき
 		total.dose = total.intake * doseCoefficient * 1e+6;
-		totalHTML = totalHTML + "<br>&nbsp;&nbsp;預託実効線量: <strong>" + total.dose.toScientificNotation(2) + " μSv</strong>";
+		totalHTML += "<br>&nbsp;&nbsp;預託実効線量: <strong>" + total.dose.toScientificNotation(2) + " μSv</strong>";
 	}
+
 	document.getElementById("total").innerHTML = totalHTML;
 
 	// 定常状態での量
-	var steady = {retention: 0, perWeight: 0, dose: 0, urineDensity: 0};
 	var steadyHTML = "<strong>定常状態では</strong>";
+	var steady = { retention: 0, perWeight: 0, dose: 0, urineDensity: 0 };
+
 	modelParameter.forEach(function(p) {
-		steady.retention += p.a / (1/Tp + 1/p.T);
+		steady.retention += p.a / ( 1/Tp + 1/p.T );
 	});
-	steady.retention = chronic/interval/Math.LN2*steady.retention;
-	steadyHTML = steadyHTML + "<br>&nbsp;&nbsp;体内残留量: <strong>" + steady.retention.toScientificNotation(3) + " Bq</strong>";
-	steady.perWeight = steady.retention/weight;
-	steadyHTML = steadyHTML + "<br>&nbsp;&nbsp;体重あたり残留量: <strong>" + steady.perWeight.toScientificNotation(3) + " Bq/kg</strong>";
+	steady.retention = chronic / interval / Math.LN2 * steady.retention;
+	steadyHTML += "<br>&nbsp;&nbsp;体内残留量: <strong>" + steady.retention.toScientificNotation(3) + " Bq</strong>";
+
+	steady.perWeight = steady.retention / weight;
+	steadyHTML += "<br>&nbsp;&nbsp;体重あたり残留量: <strong>" + steady.perWeight.toScientificNotation(3) + " Bq/kg</strong>";
+
 	if (doseCoefficient) {
-		steady.dose = steady.retention / irfArea * doseCoefficient * 1e+6 * 365.24;
-		steadyHTML = steadyHTML + "<br>&nbsp;&nbsp;1年あたり被ばく量: <strong>" + steady.dose.toScientificNotation(2) + " μSv/年</strong>";
+		steady.dose = steady.retention / irfArea() * doseCoefficient * 1e+6 * YEAR;
+		steadyHTML += "<br>&nbsp;&nbsp;1年あたり被ばく量: <strong>" + steady.dose.toScientificNotation(2) + " μSv/年</strong>";
 	}
+
 	steady.urineDensity = chronic * urineRatio / urineVolume;
-	steadyHTML = steadyHTML + "<br>&nbsp;&nbsp;尿中濃度: <strong>" + steady.urineDensity.toScientificNotation(3) + " Bq/L</strong>";
+	steadyHTML += "<br>&nbsp;&nbsp;尿中濃度: <strong>" + steady.urineDensity.toScientificNotation(3) + " Bq/L</strong>";
+
 	document.getElementById("steady").innerHTML = steadyHTML;
 
 	////////////
@@ -475,6 +583,7 @@ function update() {
 	// 1段階目: 最初の1秒間
 	// 折れ線を描き直す
 	svg.select(".line")
+		.datum(data)
 		.transition()
 		.duration(1000)
 		.attr("d", line);
@@ -535,6 +644,153 @@ function update() {
 		.delay(1000)
 		.duration(1000)
 		.attr("d", line);
+
+	//////////
+	// 関数 //
+	//////////
+
+	// IRF(Intake Retention Fraction): t=0に単位量急性摂取のときの解, つまりグリーン関数のこと
+	function irf(t) {
+
+		if ( t >= 0 ) {
+
+			var compartments = [];
+			modelParameter.forEach(function(p) {
+				compartments.push( p.a * Math.pow(0.5, t/p.T) );
+			});
+
+			return d3.sum( compartments )*Math.pow(0.5, t/Tp);
+
+		} else {
+
+			return 0;
+
+		}
+
+	}
+
+	// IRFの積分[日]
+	function irfArea() {
+		var area = 0;
+		modelParameter.forEach(function(p) {
+			area += p.a * p.T;
+		});
+		area /= Math.LN2;
+		return area;
+	}
+
+	// t=tStartからt=tEndまで1単位/日連続摂取時の解
+	function irfContinuous(t, tStart, tEnd) {
+
+		if ( typeof tStart === "undefined" ) tStart = 0;
+		if ( typeof tEnd === "undefined" ) tEnd = maxTime;
+
+		if ( t < tStart ) {
+
+			return 0;
+
+		} else if ( t >= tStart ) {
+
+			var compartments = [];
+			var t0 = t-tStart;
+			var t1 = t-tEnd;
+
+			if ( t1 > 0 ) {
+
+				modelParameter.forEach(function(p) {
+					var Te = 1/(1/p.T + 1/Tp);
+					compartments.push(
+						p.a * Te * ( Math.pow(0.5, t1/Te) - Math.pow(0.5, t0/Te) )
+					);
+				});
+
+			} else if ( t1 <= 0 ) {
+
+				modelParameter.forEach(function(p) {
+					var Te = 1/(1/p.T + 1/Tp);
+					compartments.push(
+						p.a * Te * ( 1 - Math.pow(0.5, t0/Te) )
+					);
+				});
+
+			}
+
+			return d3.sum( compartments ) / Math.LN2;
+
+		} else {
+
+			console.log( "error irfContinuous" );
+
+		}
+
+	}
+
+	// IEF(Intake Excretion Fraction): t=0に単位量急性摂取のときの排出率[1/日]
+	function ief(t) {
+
+		if ( t >= 0 ) {
+
+			var compartments = [];
+			modelParameter.forEach(function(p) {
+				compartments.push( p.a / p.T * Math.pow(0.5, t/p.T) );
+			});
+
+			return d3.sum( compartments ) * Math.LN2 * Math.pow(0.5, t/Tp);
+
+		} else {
+
+			return 0;
+
+		}
+
+	}
+
+	// t=tStartからt=tEndまで1単位/日連続摂取時の排出速度
+	function iefContinuous(t, tStart, tEnd) {
+
+		if ( typeof tStart === "undefined" ) tStart = 0;
+		if ( typeof tEnd === "undefined" ) tEnd = maxTime;
+
+		if ( t < tStart ) {
+
+			return 0;
+
+		} else if ( t >= tStart ) {
+
+			var compartments = [];
+			var t0 = t-tStart;
+			var t1 = t-tEnd;
+
+			if ( t1 > 0 ) {
+
+				modelParameter.forEach(function(p) {
+					var Te = 1/(1/p.T + 1/Tp);
+					compartments.push(
+						p.a * Te / p.T * ( Math.pow(0.5, t1/Te) - Math.pow(0.5, t0/Te) )
+					);
+				});
+
+			} else if ( t1 <= 0 ) {
+
+				modelParameter.forEach(function(p) {
+					var Te = 1/(1/p.T + 1/Tp);
+					compartments.push(
+						p.a * Te / p.T * ( 1 - Math.pow(0.5, t0/Te) )
+					);
+				});
+
+			}
+
+			return d3.sum( compartments );
+
+		} else {
+
+			console.log( "error irfContinuous" );
+
+		}
+
+	}
+
 
 }
 
