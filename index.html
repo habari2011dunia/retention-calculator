@@ -429,6 +429,7 @@ function update() {
 					var v = initial * irf(t);
 					v += chronic / interval * irfContinuous( t, start, end );
 					v = v * doseCoefficient * 1e+6 / irfArea() * YEAR;
+					data.push( { time: t, value: v } );
 					break;
 				case "urine": // 1日あたり尿中排出量[Bq/日]
 					var v = initial * ief(t);
