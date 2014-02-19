@@ -134,17 +134,7 @@ var stepsNumber = 100; // 時間ステップ数
 var maxTime = 1000, timeStep = maxTime / stepsNumber;
 var data = []; // 計算データ
 
-selectValue.onchange = update;
-inputWeight.onchange = update;
-inputInitial.onchange = update;
-inputInterval.onchange = update;
-inputChronic.onchange = update;
-inputStart.onchange = update;
-inputEnd.onchange = update;
-inputMaxTime.onchange = update;
-inputPhysicalHalflife.onchange = update;
-inputBiologicalHalflife.onchange = update;
-inputUrineVolume.onchange = update;
+d3.selectAll("input, select").on("change", update);
 
 initD3();
 
