@@ -80,7 +80,7 @@ input[type="number"] {
 </div>
 <div id="axis">
 時間軸: <input type="number" value="1000" id="maxTime" min="1">日後まで表示<br>
-縦軸: <select id="value"></select>を表示
+縦軸: <select id="quantity"></select>を表示
 </div>
 </form>
 </div><!-- control -->
@@ -103,7 +103,7 @@ Number.prototype.toScientificNotation = function(x) {
 var select = {};
 var input = {};
 
-["model", "subject", "nuclide", "value"].forEach(function(id) {
+["model", "subject", "nuclide", "quantity"].forEach(function(id) {
 	select[id] = document.getElementById(id);
 });
 
@@ -150,8 +150,8 @@ d3.json("models.json", function(error, json) { // モデルデータのロード
 
 	// 核種選択
 	select["nuclide"].onchange = function() {
-		var i = select["nuclide"].selectedIndex;
-		input["physicalHalflife"].value = nuclides[i].halflife;
+		var nuclide = nuclides[select["nuclide"].selectedIndex];
+		input["physicalHalflife"].value = nuclide.halflife;
 		update();
 	};
 
@@ -246,38 +246,37 @@ function onChangeModel() { // モデル変更時
 	document.getElementById("halflifeLine").style.display = "none";
 
 	// 選択されたモデルの取得
-	var i = select["model"].selectedIndex;
-	var selectedModel = models[i];
+	var model = models[select["model"].selectedIndex];
 
 	// 対象選択メニューの更新
 	while( select["subject"].options.length ) {
 		select["subject"].remove(0); // 一旦すべての選択肢を消去
 	}
 
-	selectedModel.subject.forEach(function(s) {
+	model.subject.forEach(function(s) {
 		select["subject"].add( new Option(s.label) ); // 選択肢を追加
 	});
 
-	select["subject"].selectedIndex = selectedModel.selectedIndex; 	// 既定の選択
+	select["subject"].selectedIndex = model.selectedIndex; 	// 既定の選択
 
 	// 表示量選択メニューの更新
-	while( select["value"].options.length ) {
-		select["value"].remove(0); // 一旦すべての選択肢を消去
+	while( select["quantity"].options.length ) {
+		select["quantity"].remove(0); // 一旦すべての選択肢を消去
 	}
 
 	// 共通の選択肢
-	select["value"].add( new Option( "体内残留量[Bq]", "wholeBody" ) );
-	select["value"].add( new Option( "体重あたり残留量[Bq/kg]", "perWeight") );
-	select["value"].add( new Option( "1日あたり尿中排出量[Bq/日]", "urine") );
-	select["value"].add( new Option( "尿中濃度[Bq/L]", "urineDensity") );
+	select["quantity"].add( new Option( "体内残留量[Bq]", "wholeBody" ) );
+	select["quantity"].add( new Option( "体重あたり残留量[Bq/kg]", "perWeight") );
+	select["quantity"].add( new Option( "1日あたり尿中排出量[Bq/日]", "urine") );
+	select["quantity"].add( new Option( "尿中濃度[Bq/L]", "urineDensity") );
 
 	// ICRP publ. 56モデルのとき
-	if( selectedModel.name == "ICRP56" ) {
-		select["value"].add(new Option("1年あたり被ばく量[μSv/年]", "dose"));
+	if( model.name == "ICRP56" ) {
+		select["quantity"].add(new Option("1年あたり被ばく量[μSv/年]", "dose"));
 	}
 
 	// 生物学的半減期手入力モードのとき
-	if( selectedModel.name ==  "halflife" ) {
+	if( model.name ==  "halflife" ) {
 		document.getElementById("subjectLine").style.display = "none"; // 対象選択を非表示
 		document.getElementById("halflifeLine").style.display = "inline"; // 半減期入力欄を表示
 	}
@@ -288,19 +287,15 @@ function onChangeModel() { // モデル変更時
 
 function onChangeSubject() { // 対象変更時
 
-	// 選択されたモデルを取得
-	var modelIndex = select["model"].selectedIndex;
-	var selectedModel = models[modelIndex];
-
-	// 選択された対象を取得
-	var subjectIndex = select["subject"].selectedIndex;
-	var selectedSubject = selectedModel.subject[subjectIndex];
+	// 選択されたモデルと対象を取得
+	var model = models[select["model"].selectedIndex];
+	var subject = model.subject[select["subject"].selectedIndex];
 
 	// 体重フォームの値を書き直す
-	input["weight"].value = selectedSubject.weight;
+	input["weight"].value = subject.weight;
 
 	// 尿フォームの値を書き直す
-	input["urineVolume"].value = selectedSubject.urine;
+	input["urineVolume"].value = subject.urine;
 
 	update();
 
@@ -325,12 +320,10 @@ function update() {
 	var Tp = Number( input["physicalHalflife"].value ) * YEAR; // 年->日
 
 	// モデル
-	var modelIndex = select["model"].selectedIndex;
-	var selectedModel = models[modelIndex];
+	var model = models[select["model"].selectedIndex];
 
 	// 対象
-	var subjectIndex = select["subject"].selectedIndex;
-	var selectedSubject = selectedModel.subject[subjectIndex];
+	var subject = model.subject[select["subject"].selectedIndex];
 
 	// 体重
 	var weight = Number( input["weight"].value );
@@ -339,8 +332,8 @@ function update() {
 	var urineVolume = Number( input["urineVolume"].value );
 
 	// モデルのパラメータ
-	var modelParameter = selectedSubject.parameter;
-	if (selectedModel.name == "halflife") { // 半減期モデルなら生物学的半減期を取得
+	var modelParameter = subject.parameter;
+	if (model.name == "halflife") { // 半減期モデルなら生物学的半減期を取得
 		if (input["biologicalHalflife"].value <= 0) { // 0以下なら1日に強制変換
 			input["biologicalHalflife"].value = 1;
 		}
@@ -352,8 +345,8 @@ function update() {
 
 	// 預託実効線量換算係数
 	var doseCoefficient = null;
-	if("doseCoefficient" in selectedSubject) {
-		doseCoefficient = Number( selectedSubject.doseCoefficient[ nuclide ] );
+	if("doseCoefficient" in subject) {
+		doseCoefficient = Number( subject.doseCoefficient[ nuclide ] );
 	}
 
 	// 初期摂取
@@ -368,7 +361,7 @@ function update() {
 	maxTime = Number( input["maxTime"].value );
 
 	// 計算する量
-	var selectedValue = select["value"].options[select["value"].selectedIndex].value;
+	var quantity = select["quantity"].options[select["quantity"].selectedIndex].value;
 
 	//////////
 	// 計算 //
@@ -385,7 +378,7 @@ function update() {
 
 			var t = timeStep * i; // 時刻
 
-			switch( selectedValue ) {
+			switch( quantity ) {
 				case "wholeBody": // 体内残留量[Bq]
 					var v = initial * irf(t);
 					v += chronic / interval * irfContinuous( t, start, end );
@@ -475,7 +468,7 @@ function update() {
 
 		function addData() {
 
-			switch( selectedValue ) {
+			switch( quantity ) {
 				case "wholeBody": // 体内残留量[Bq]
 					var v = d3.sum( compartments );
 					data.push( { time: t, value: v } );
@@ -582,7 +575,7 @@ function update() {
 		.delay(1000)
 		.duration(1000)
 		.text(function() { 
-			switch(selectedValue) {
+			switch(quantity) {
 				case "wholeBody": 
 					return "体内残留量[Bq]";
 					break;
@@ -765,9 +758,7 @@ function update() {
 
 	}
 
-
 }
-
 
 })();
 </script>
