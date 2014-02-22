@@ -400,7 +400,7 @@ function update() {
 
 		for( var i = 0; timeStep * i <= maxTime; i ++ ) {
 
-			var t = timeStep * i; // 時刻
+			var t = Math.min( timeStep * i, maxTime ); // 時刻
 
 			switch( quantity ) {
 				case "wholeBody": // 体内残留量[Bq]
@@ -481,14 +481,21 @@ function update() {
 
 		}
 
-		// 摂取終了後から最大表示時刻まで
-		while ( t <= maxTime ) {
+		// 摂取終了後から最大表示時刻手前まで
+		while ( t <= maxTime - timeStep ) {
 			t += timeStep;
 			for ( var j = 0; j < compartments.length; j++ ) {
 				compartments[j] *= Math.pow( 0.5, timeStep / modelParameter[j].T );
 			}
 			addData();
 		}
+
+		// 最大表示時刻まで
+		for ( var j = 0; j < compartments.length; j++ ) {
+			compartments[j] *= Math.pow( 0.5, (maxTime - t) / modelParameter[j].T );
+		}
+		t = maxTime;
+		addData();
 
 		function addData() {
 
