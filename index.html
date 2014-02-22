@@ -99,7 +99,7 @@ Number.prototype.toScientificNotation = function(x) {
 	return this.toPrecision(x).replace("e", "&times;10<sup>").replace("+", "") + "</sup>";
 };
 
-// input要素
+// input, select要素
 var select = {};
 var input = {};
 
@@ -125,6 +125,14 @@ var nuclides = [
 var w = 640, h = 500;
 var margin = { top: 10, left: 50, bottom: 40, right:50 };
 var svg, xScale, yScale, xAxis, yAxis, xGrid, yGrid, line;
+var yLabel = {
+	wholeBody: "体内残留量[Bq]",
+	perWeight: "体重あたり残留量[Bq/kg]",
+	urine: "1日あたり尿中排出量[Bq/日]",
+	urineDensity: "尿中濃度[Bq/L]",
+	dose: "1年あたり被ばく量[μSv/年]"
+}
+var timer, inTransition = false, forbidUpdate = false;
 
 // 計算用
 var YEAR = 365.24;
@@ -132,6 +140,7 @@ var urineRatio = 0.8; // 尿による排出の割合を80%と仮定
 var stepsNumber = 100; // 時間ステップ数
 var maxTime = 1000, timeStep = maxTime / stepsNumber;
 var data = []; // 計算データ
+var quantity;
 
 d3.selectAll("input, select").on("change", update);
 
@@ -145,15 +154,9 @@ d3.json("models.json", function(error, json) { // モデルデータのロード
 		select["model"].add(new Option(m.label)); // モデル選択肢の追加
 	});
 
-	select["model"].onchange = onChangeModel;
-	select["subject"].onchange = onChangeSubject;
-
-	// 核種選択
-	select["nuclide"].onchange = function() {
-		var nuclide = nuclides[select["nuclide"].selectedIndex];
-		input["physicalHalflife"].value = nuclide.halflife;
-		update();
-	};
+	d3.select("select#model").on("change", onChangeModel);
+	d3.select("select#subject").on("change", onChangeSubject);
+	d3.select("select#nuclide").on("change", onChangeNuclide);
 
 	onChangeModel();
 
@@ -242,6 +245,8 @@ function initD3() {
 
 function onChangeModel() { // モデル変更時
 
+	forbidUpdate = true;
+
 	document.getElementById("subjectLine").style.display = "inline"; 
 	document.getElementById("halflifeLine").style.display = "none";
 
@@ -287,6 +292,8 @@ function onChangeModel() { // モデル変更時
 
 function onChangeSubject() { // 対象変更時
 
+	forbidUpdate = true;
+
 	// 選択されたモデルと対象を取得
 	var model = models[select["model"].selectedIndex];
 	var subject = model.subject[select["subject"].selectedIndex];
@@ -297,11 +304,28 @@ function onChangeSubject() { // 対象変更時
 	// 尿フォームの値を書き直す
 	input["urineVolume"].value = subject.urine;
 
+	forbidUpdate = false;
+
+	update();
+
+}
+
+function onChangeNuclide() {
+
+	var nuclide = nuclides[select["nuclide"].selectedIndex];
+	input["physicalHalflife"].value = nuclide.halflife;
+
 	update();
 
 }
 
 function update() {
+
+	clearTimeout( timer );
+
+	if ( forbidUpdate ) return;
+
+	if ( inTransition ) skip(); // 進行中のグラフ変形をスキップ
 
 	////////////////
 	// 入力データ //
@@ -361,7 +385,7 @@ function update() {
 	maxTime = Number( input["maxTime"].value );
 
 	// 計算する量
-	var quantity = select["quantity"].options[select["quantity"].selectedIndex].value;
+	quantity = select["quantity"].options[select["quantity"].selectedIndex].value;
 
 	//////////
 	// 計算 //
@@ -372,9 +396,9 @@ function update() {
 	data = [];
 	timeStep = maxTime/stepsNumber;
 
-	if ( timeStep >= interval ) { // 連続摂取近似
+	if ( timeStep >= interval ) { // (1) 摂取間隔<=時間ステップのとき: 連続摂取近似
 
-		for( var i = 0; timeStep * i <= maxTime; i ++ ) { // 時間を等間隔に分ける
+		for( var i = 0; timeStep * i <= maxTime; i ++ ) {
 
 			var t = timeStep * i; // 時刻
 
@@ -412,7 +436,7 @@ function update() {
 
 		}
 
-	} else if ( timeStep < interval ) { // 逐次計算
+	} else if ( timeStep < interval ) { // (2) 摂取間隔>時間ステップのとき: 逐次計算
 
 		intakeTime = []; // 摂取時刻
 		for ( var i = 0; i * interval <= end - start; i ++ ) {
@@ -542,75 +566,8 @@ function update() {
 
 	document.getElementById("steady").innerHTML = steadyHTML;
 
-	////////////
-	// グラフ //
-	////////////
-
-	// 2段階のアニメーションで変形する
-	// 1段階目: 最初の1秒間
-	// 折れ線を描き直す
-	svg.select(".line")
-		.datum(data)
-		.transition()
-		.duration(1000)
-		.attr("d", line);
-
-	// 2段階目: 1秒待って次の1秒間
-	// y軸のデータ範囲を取り直す
-	yScale.domain([0, d3.max(data, function(d) { return d.value; } )]);
-	xScale.domain([0, maxTime]);
-	// 軸を描き直す
-	svg.select(".x.axis")
-		.transition()
-		.delay(1000)
-		.duration(1000)
-		.call(xAxis);
-	svg.select(".y.axis")
-		.transition()
-		.delay(1000)
-		.duration(1000)
-		.call(yAxis);
-	svg.select(".y.label")
-		.transition()
-		.delay(1000)
-		.duration(1000)
-		.text(function() { 
-			switch(quantity) {
-				case "wholeBody": 
-					return "体内残留量[Bq]";
-					break;
-				case "perWeight":
-					return "体重あたり残留量[Bq/kg]";
-					break;
-				case "urine":
-					return "1日あたり尿中排出量[Bq/日]";
-					break;
-				case "urineDensity":
-					return "尿中濃度[Bq/L]";
-					break;
-				case "dose":
-					return "1年あたり被ばく量[μSv/年]";
-					break;
-			}
-		});
-
-	// グリッドを描き直す
-	svg.select(".x.grid")
-		.transition()
-		.delay(1000)
-		.duration(1000)
-		.call(xGrid);
-	svg.select(".y.grid")
-		.transition()
-		.delay(1000)
-		.duration(1000)
-		.call(yGrid);
-	// 軸に合わせて折れ線を描き直す
-	svg.select(".line")
-		.transition()
-		.delay(1000)
-		.duration(1000)
-		.attr("d", line);
+	// グラフ変形開始
+	startTransition();
 
 	//////////
 	// 関数 //
@@ -758,7 +715,108 @@ function update() {
 
 	}
 
-}
+} // end of update()
+
+// グラフ変形関数
+function startTransition() {
+
+	inTransition = true;
+	timer = setTimeout(function() {
+		inTransition = false;
+	}, 2000);
+
+	// 2段階のアニメーションで変形する
+	// 1段階目: 最初の1秒間
+	// 折れ線を描き直す
+	svg.select(".line")
+		.datum(data)
+		.transition()
+		.duration(1000)
+		.attr("d", line);
+
+	// 2段階目: 1秒待って次の1秒間
+	// y軸のデータ範囲を取り直す
+	yScale.domain([0, d3.max(data, function(d) { return d.value; } )]);
+	xScale.domain([0, maxTime]);
+	// 軸を描き直す
+	svg.select(".x.axis")
+		.transition()
+		.delay(1000)
+		.duration(1000)
+		.call(xAxis);
+	svg.select(".y.axis")
+		.transition()
+		.delay(1000)
+		.duration(1000)
+		.call(yAxis);
+	svg.select(".y.label")
+		.transition()
+		.delay(1000)
+		.duration(1000)
+		.text(yLabel[quantity]);
+
+	// グリッドを描き直す
+	svg.select(".x.grid")
+		.transition()
+		.delay(1000)
+		.duration(1000)
+		.call(xGrid);
+	svg.select(".y.grid")
+		.transition()
+		.delay(1000)
+		.duration(1000)
+		.call(yGrid);
+	// 軸に合わせて折れ線を描き直す
+	svg.select(".line")
+		.transition()
+		.delay(1000)
+		.duration(1000)
+		.attr("d", line);
+
+} // end of transition()
+
+// グラフ変形をスキップ
+function skip() {
+
+	svg.select(".line")
+		.interrupt()
+		.attr("d", line);
+
+	yScale.domain([0, d3.max(data, function(d) { return d.value; } )]);
+	xScale.domain([0, maxTime]);
+
+	svg.select(".x.axis")
+		.interrupt()
+		.transition()
+		.duration(0)
+		.call(xAxis);
+
+	svg.select(".y.axis")
+		.interrupt()
+		.transition()
+		.duration(0)
+		.call(yAxis);
+
+	svg.select(".y.label")
+		.interrupt()
+		.transition()
+		.duration(0)
+		.text(yLabel[quantity]);
+
+	svg.select(".x.grid")
+		.interrupt()
+		.transition()
+		.duration(0)
+		.call(xGrid);
+	svg.select(".y.grid")
+		.interrupt()
+		.transition()
+		.duration(0)
+		.call(yGrid);
+
+	inTransition = false;
+
+} // end of skip()
 
 })();
 </script>
