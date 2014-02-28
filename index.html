@@ -88,6 +88,7 @@ input[type="number"] {
 <div id="result">
 <p id="total"></p>
 <p id="steady"></p>
+<p>体内K-40量: <strong><span id="k40">0</span> Bq</strong></p>
 </div>
 
 </div><!-- sidePanel -->
@@ -141,6 +142,7 @@ var stepsNumber = 100; // 時間ステップ数
 var maxTime = 1000, timeStep = maxTime / stepsNumber;
 var data = []; // 計算データ
 var quantity;
+var K40BqPerKkg = 1.17E-4 / 6.636E-26 * 1.761E-17; // K-40 Bq / K kg
 
 d3.selectAll("input, select").on("change", update);
 
@@ -572,6 +574,11 @@ function update() {
 	steadyHTML += "<br>&nbsp;&nbsp;尿中濃度: <strong>" + steady.urineDensity.toScientificNotation(3) + " Bq/L</strong>";
 
 	document.getElementById("steady").innerHTML = steadyHTML;
+
+	// K-40
+	var k40 = weight * K40BqPerKkg;
+	k40 *= subject.label == "3ヶ月" ? 0.00285 : 0.00202; // K composition (wt)
+	document.getElementById("k40").innerHTML = k40.toScientificNotation(3);
 
 	// グラフ変形開始
 	startTransition();
