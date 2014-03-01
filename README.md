@@ -1,4 +1,4 @@
-放射性物質を摂取したときの体内残留量を選択した体内動態モデルに基づいて計算し, グラフ表示します。キーボードで数値を入力するときは半角数字を使用してください。
+﻿放射性物質を摂取したときの体内残留量を選択した体内動態モデルに基づいて計算し, グラフ表示します。キーボードで数値を入力するときは半角数字を使用してください。
 
 ICRPモデルを選択した場合, 預託実効線量を計算して表示します。
 摂取量から預託実効線量への換算係数には経口摂取条件のものを使用しています。
@@ -17,3 +17,4 @@ ICRPモデルを選択した場合, 預託実効線量を計算して表示し�
 * 早野龍五 [『放射性セシウムを時々食べる → 体内セシウム量変化をグラフに』](http://nucl.phys.s.u-tokyo.ac.jp/hayano/radiocesium/intermittent.html)
 * ICRP ["ICRP Database of Dose Coefficients: Workers and Members of the Public; Ver. 3.0"](http://www.icrp.org/page.asp?id=145)
 * 茨城大学有志の会 [『やっかいな放射線と向き合う資料編』](http://yakkaihousyasen.web.fc2.com/)
+* Oak Ridge National Laboratory["Description of the Mathematical Phantom"](http://ordose.ornl.gov/resources/phantom.html)
